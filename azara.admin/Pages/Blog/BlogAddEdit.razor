@@ -1,0 +1,340 @@
+﻿@page "/blog/insert"
+@page "/blog/update/{Id}"
+
+@using System.Net.Http.Headers;
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Const
+@using azara.admin.Models.Blog
+@using azara.admin.Helpers
+@using azara.admin.Models.Blog.Request
+
+
+<PageTitle>@AdminTitleModel.BlogTitle</PageTitle>
+
+
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title justify-content-center align-item-center">
+            <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Blog : " : "Add Blog")</h2>
+            @if (!string.IsNullOrWhiteSpace(Id))
+            {
+                <h4 class="ms-1">@Title</h4>
+            }
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<div class="data-table-area">
+    <EditForm class="form-details m-t-15" Model="blogInsertUpdateRequest" OnValidSubmit="AddUpdateData">
+        <div class="filter-area justify-end align-item-center">
+            <div class="add-btn">
+                <a href="/blog" class="cancel-btn">Cancel</a>
+                <input type="submit" value="Submit" />
+            </div>
+        </div>
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Blog Title</label>
+                    <InputText class="form-control without-ic" placeholder="Enter blog title" @bind-Value=blogInsertUpdateRequest.Title aria-describedby="blogtitlelabel" aria-label="Blog Title" />
+                    <ValidationMessage For="@(() => blogInsertUpdateRequest.Title)" />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <BlazoredTextEditor @ref="@QuillHtml" Placeholder="Please enter event decription">
+                        <ToolbarContent>
+                            <select class="ql-header">
+                                <option selected=""></option>
+                                <option value="1"></option>
+                                <option value="2"></option>
+                                <option value="3"></option>
+                                <option value="4"></option>
+                                <option value="5"></option>
+                            </select>
+                            <span class="ql-formats">
+                                <button class="ql-bold"></button>
+                                <button class="ql-italic"></button>
+                                <button class="ql-underline"></button>
+                                <button class="ql-strike"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <select class="ql-color"></select>
+                                <select class="ql-background"></select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered"></button>
+                                <button class="ql-list" value="bullet"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link"></button>
+                            </span>
+                        </ToolbarContent>
+                        <EditorContent>
+                            @blogInsertUpdateRequest.Descriptions
+                        </EditorContent>
+                    </BlazoredTextEditor>
+                </div>
+                <div class="form-group">
+                    <label>Author Name</label>
+                    <InputText class="form-control without-ic" placeholder="Enter author name" @bind-Value=blogInsertUpdateRequest.AuthorName aria-describedby="authornamelabel" aria-label="Author Name" />
+                    <ValidationMessage For="@(() => blogInsertUpdateRequest.AuthorName)" />
+                </div>
+                @*<div class="form-group">
+                <label>Meta Title</label>
+                <InputText class="form-control without-ic" placeholder="Enter meta title" @bind-Value=blogInsertUpdateRequest.MetaTitle aria-describedby="metatitlelabel" aria-label="Meta Title" />
+                <ValidationMessage For="@(() => blogInsertUpdateRequest.MetaTitle)" />
+                </div>*@
+                @* <div class="form-group">
+                <label>Meta Description</label>
+                <InputText class="form-control without-ic" placeholder="Enter blog title" @bind-Value=blogInsertUpdateRequest.MetaDescriptions aria-describedby="metadescriptionlabel" aria-label="Meta Description" />
+                <ValidationMessage For="@(() => blogInsertUpdateRequest.MetaDescriptions)" />
+                </div>*@
+                <div class="form-group">
+                    <label>Published Date</label>
+                    <input type="date" class="form-control without-ic" placeholder="Published Date" @bind-value=blogInsertUpdateRequest.PublishedDate aria-describedby="publisheddatelabel" aria-label="published date" min='@MinDate.ToString("yyyy-MM-dd")' />
+                    <ValidationMessage For="@(() => blogInsertUpdateRequest.PublishedDate)" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Blog Main Image</label>
+
+                    <div id="file-upload-form" class="uploader">
+                        @if (Loader == true)
+                        {
+                            <Loader></Loader>
+
+                        }
+                        else
+                        {
+                            <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" @bind-Value="blogInsertUpdateRequest.Image" @bind-Value:event="OnInput" OnChange="HandleImageUpload" />
+                            <ValidationMessage For="@(() => blogInsertUpdateRequest.Image)" />
+                            <label for="file-upload" id="file-drag">
+                                @if (!string.IsNullOrWhiteSpace(blogInsertUpdateRequest.Image))
+                                {
+                                    <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </button>
+                                }
+                                @if (Loader == true)
+                                {
+                                    <Loader></Loader>
+
+                                }
+
+                                <img id="file-image" src="@blogInsertUpdateRequest.Image" alt="" class="@((string.IsNullOrEmpty(blogInsertUpdateRequest.Image)? "hidden" : ""))" @bind-Value="blogInsertUpdateRequest.Image" @bind-Value:event="OnInput">
+                                <div id="start">
+                                    @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                    <i class="fa fa-upload" aria-hidden="true"></i>
+                                    <div>Drag & Drop Here or </div>
+                                    <div id="notimage" class="hidden">Please select an image</div>
+                                    <a id="file-upload-btn" class="">CHoose a file</a>
+                                    <p class="second-theme-color">max. 2GB</p>
+                                </div>
+                                <div id="response" class="hidden d-none">
+                                    <div id="messages"></div>
+                                    <progress class="progress" id="file-progress" value="0">
+                                        <span>0</span>%
+                                    </progress>
+                                </div>
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; }
+    public string Title { get; set; }
+    BlogInsertUpdateRequest blogInsertUpdateRequest = new BlogInsertUpdateRequest();
+    BlazoredTextEditor QuillHtml { get; set; } = new BlazoredTextEditor();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    private DateTime MinDate { get; set; } = DateTime.UtcNow;
+    [Inject]
+    public HttpClient HttpClient { get; set; }
+    public string ImgUrl { get; set; }
+
+    public bool IsUpdate = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            TokenResponse.Token = token;
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                if (blogInsertUpdateRequest != null)
+                {
+                    bool loading = true;
+                    while (loading)
+                    {
+                        try
+                        {
+                            await this.QuillHtml.LoadHTMLContent(blogInsertUpdateRequest.Descriptions);
+                            loading = false;
+                        }
+                        catch
+                        {
+                            await Task.Delay(10);
+                            loading = true;
+                        }
+                    }
+                }
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            blogInsertUpdateRequest.Id = Id;
+            Loader = false;
+            var result = await BlogHelpers.BlogGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                blogInsertUpdateRequest = JsonConvert.DeserializeObject<BlogInsertUpdateRequest>(result.data);
+                if (blogInsertUpdateRequest != null)
+                {
+                    Title = blogInsertUpdateRequest.Title;
+                    MinDate = blogInsertUpdateRequest.PublishedDate >= DateTime.UtcNow ? DateTime.UtcNow : blogInsertUpdateRequest.PublishedDate;
+                }
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Blog not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New Blog";
+            blogInsertUpdateRequest = new BlogInsertUpdateRequest();
+        }
+        StateHasChanged();
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+        blogInsertUpdateRequest.Id = Id;
+        blogInsertUpdateRequest.Descriptions = await QuillHtml.GetHTML();
+        var result = await BlogHelpers.BlogAddUpdateApi(blogInsertUpdateRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(blogInsertUpdateRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Blog Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Blog Insert Successfully!");
+                }
+                NavManager.NavigateTo("/blog");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = blogInsertUpdateRequest.ImageList != null && blogInsertUpdateRequest.ImageList.Any() ? blogInsertUpdateRequest.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Blog, OldFileName = blogInsertUpdateRequest.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    blogInsertUpdateRequest.Image = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage()
+    {
+        blogInsertUpdateRequest.Image = new CommonHelpers(FileUpload).DeleteImage(blogInsertUpdateRequest.Image);
+    }
+}

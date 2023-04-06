@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+
+
+  <!--******************* Header Section Start *********************-->
+  <header class="position-relative sm-margin">
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="top-bar-header d-flex align-items-center justify-content-start">
+          <a href="#" class="bars custom-toggle-bar" @onclick="CustomToggleBar" data-bs-toggle="modal" data-bs-target="#side-navigation-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </a>
+          <!-- <h1></h1> -->
+        </div>
+            <a href="index" class="navbar-brand">
+          <img src="images/azara-logo.svg" class="img-fluid" alt="Azara Logo">
+        </a>
+        <a href="notification" class="account-label">
+          <img src="images/notification-icon.svg" class="img-fluid notification" alt="Notification">
+        </a>
+      </div>
+    </div>
+  </header>
+  <!--******************* Header Section End *********************-->
+
+@code {
+    
+    private async Task CustomToggleBar()
+    {
+        await JsRuntime.InvokeVoidAsync("CustomToggleBar");
+    }
+}

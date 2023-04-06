@@ -1,0 +1,226 @@
+﻿@page "/sign-in"
+@page "/sign-in/{EmailId}"
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.SignInTitle</PageTitle>
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+else
+{
+    <!--******************* Middle Section Start ******************-->
+    @if (IsLogin)
+    {
+        <main>
+            <div class="position-fixed top-0 start-0 end-0 container">
+                <div class="back-panel d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center justify-content-start">
+                        <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                        <h1>Sign In</h1>
+                    </div>
+                </div>
+            </div>
+            <section class="position-relative overflow-x-hidden pt-3 pt-md-0">
+                <div class="container">
+                    <div class="login-details min-vh-100 justify-content-start justify-content-sm-center">
+                        <div class="row">
+                            <div class="col-md-7 col-lg-6 col-xl-5 col-xxl-4 mx-auto">
+                                <h1>Sign In</h1>
+                                <p>
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                </p>
+                                <EditForm Model="loginRequest">
+                                    <DataAnnotationsValidator />
+                                    <div class="row">
+                                        <div class="form-group col-12">
+                                            <label for="email" class="form-label">Email address</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text" id="emaillabel">
+                                                    <img src="images/email-icon.svg" class="img-fluid"
+                                                         alt="Email">
+                                                </span>
+                                                <InputText type="email" @bind-Value=loginRequest.EmailId class="form-control" id="email" placeholder="azara@email.com"
+                                                           aria-describedby="emaillabel" />
+                                            </div>
+                                            <ValidationMessage For="@(() => loginRequest.EmailId)" />
+                                        </div>
+                                        <!-- col -->
+                                        <div class="form-group col-12">
+                                            <label for="text" class="form-label">Password</label>
+                                            <div class="input-group eye-icons">
+                                                <span class="input-group-text">
+                                                    <img src="images/password-form-icon.svg"
+                                                         class="img-fluid" alt="Password">
+                                                </span>
+                                                <input type="@TextType" @bind-value="loginRequest.Password" class="form-control" placeholder="Enter Password"
+                                                       aria-describedby="newpwdlabel">
+                                                <button class="@Class" @onclick="ShowPassword"><img src="@EyeIcon" class="img-fluid" alt="User"></button>
+                                            </div>
+                                            <ValidationMessage For="@(() => loginRequest.Password)" />
+                                        </div>
+                                        <!-- col -->
+                                        <div class="col-12">
+                                            <a href="/forgot-password" class="forgot-pwd">Forgot Password?</a>
+                                        </div>
+                                        <!-- col -->
+                                        <div class="col-12">
+                                            <button type="submit" @onclick="DoLogin" class="btn btn-common">Sign In</button>
+                                        </div>
+                                        <!-- col -->
+                                    </div>
+                                </EditForm>
+                                <!-- row -->
+                            </div>
+                            <!-- col -->
+                        </div>
+                        <!-- row -->
+                        <div class="form-footer-text">
+                            <p>Don’t have an account ? <a href="/sign-up">Sign Up</a></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- background Circle Shape start -->
+                <img src="images/bg-top-circle.svg" class="img-fluid bg-top-circle position-absolute top-0 end-0" alt="Circle">
+                <img src="images/bg-half-circle.svg" class="img-fluid bg-left-circle position-absolute bottom-0 start-0" alt="Circle">
+                <img src="images/bg-half-circle.svg" class="img-fluid bg-right-circle position-absolute bottom-0 end-0" alt="Circle">
+                <!-- background Circle Shape end -->
+                <!-- bg Circle Wave Animation start -->
+                <div class="login-waves position-fixed bottom-0 start-0 end-0">
+                    <div class="bg-circle-wave">
+                        <span class="wave s1"></span>
+                        <span class="wave s2"></span>
+                        <span class="wave s3"></span>
+                        <span class="wave s4"></span>
+                    </div>
+                </div>
+                <!-- bg Circle Wave Animation end -->
+            </section>
+        </main>
+    }
+    else
+    {
+        <p>please wait for verification process...</p>
+    }
+    <!--******************* Middle Section End ******************-->
+}
+
+
+@code {
+
+    public string EyeIcon = "images/Eye-Off.svg";
+    protected string TextType = "password";
+    public string Class = "btn-pwd hide-icon";
+    [Parameter]
+    public string EmailId { get; set; }
+
+    private bool Loader { get; set; } = false;
+    string ErrorMessage = string.Empty;
+    private bool IsLogin { get; set; } = true;
+
+    LoginRequest loginRequest = new LoginRequest();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loader = true;
+        var token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        if (token != null && token != "" && token == TokenResponse.Token)
+        {
+            NavManager.NavigateTo("/index");
+        }
+        if (!string.IsNullOrWhiteSpace(EmailId))
+        {
+            Loader = IsLogin = false;
+            EmailId = GenericHelper.Decipher(EmailId, 3);
+            var result = await AccountHelpers.IsUserValid(new CheckUserValidRequest { EmaiId = EmailId });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Your email is successfully verify, now you can login.");
+                Loader = false;
+                IsLogin = true;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_invalid_emailid_password"]}");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["page_not_found"]}");
+            }
+        }
+        Loader = false;
+    }
+
+    public async Task DoLogin()
+    {
+        Loader = true;
+        var result = await AccountHelpers.LoginAPI(loginRequest);
+        if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            var response = JsonConvert.DeserializeObject<LoginResponse>(result.data);
+            await localStorage.SetItemAsync("token", response.Token);
+            await localStorage.SetItemAsync("userId", response.Id);
+            TokenResponse.Token = response.Token;
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{Loc["sucsess_login"]}");
+            NavManager.NavigateTo("/index");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            if (result.meta.message[0].Equals("Account not found"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_account_not_found"]}");
+
+            }
+            else if (result.meta.message[0].Equals("Password is invalid"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_password_invalid"]}");
+            }
+            else if (result.meta.message[0].Equals("error_email_not_verified"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_email_not_verified"]}");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_invalid_emailid_password"]}");
+            }
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_failed_to_login"]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    protected void ShowPassword()
+    {
+        if (this.TextType.Equals("password"))
+        {
+            Class = "btn-pwd";
+            TextType = "text";
+            EyeIcon = "images/Eye-On.svg";
+        }
+        else
+        {
+            EyeIcon = "images/Eye-Off.svg";
+            TextType = "password";
+            Class = "btn-pwd hide-icon";
+        }
+    }
+}

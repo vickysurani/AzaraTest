@@ -1,0 +1,497 @@
+﻿@page "/sign-up"
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.SignUpTitle</PageTitle>
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+else
+{
+    <!--******************* Middle Section Start ******************-->
+    <main>
+
+        <!-- Modal start -->
+        <div class="modal fade custom-app-modal" id="customPopupModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <p>The Users is already Exist in POS System. Please Sign in </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-common btn-barcode me-3 me-xl-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-common" @onclick="GoTo" target="_self" data-bs-dismiss="modal">Sign In</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal End -->
+
+        <div class="position-fixed top-0 start-0 end-0 container">
+            <div class="back-panel d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-start">
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                    <h1>Sign Up</h1>
+                </div>
+            </div>
+        </div>
+        <section class="common-padding position-relative xs-padding overflow-x-hidden">
+            <div class="container">
+                <div class="login-details pt-0">
+                    <div class="row">
+                        <div class="col-12 col-md-10 col-xl-8 mx-auto">
+                            <h1>Sign Up</h1>
+                            <p>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                            </p>
+                            <EditForm Model="signUpRequest">
+                                <DataAnnotationsValidator />
+                                <div class="row col-grid-row">
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">First Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="fnamelabel">
+                                                <img src="images/user-form-icon.svg"
+                                                     class="img-fluid" alt="User">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.FirstName" class="form-control" id="firstname" placeholder="Enter First Name"
+                                                   aria-describedby="fnamelabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.FirstName)" />
+                                    </div>
+                                    <!-- col -->
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Last Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="lnamelabel">
+                                                <img src="images/user-form-icon.svg"
+                                                     class="img-fluid" alt="User">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.LastName" class="form-control" id="lastname" placeholder="Enter Last Name"
+                                                   aria-describedby="lnamelabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.LastName)" />
+                                    </div>
+                                    <!-- col -->
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="emaillabel">
+                                                <img src="images/email-form-icon.svg"
+                                                     class="img-fluid" alt="Email">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.EmailId" class="form-control" id="email" placeholder="Enter Email Address"
+                                                   aria-describedby="emaillabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.EmailId)" />
+                                    </div>
+                                    <!-- col -->
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Mobile Number </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="mobilelabel">
+                                                <img src="images/call-form-icon.svg"
+                                                     class="img-fluid" alt="Mobile">
+                                            </span>
+                                            <input type="tel" @bind-value="signUpRequest.MobileNumber" class="form-control" id="mobilenumber" placeholder="Enter Mobile Number"
+                                                   aria-describedby="mobilelabel" onkeypress="return ((event.charCode >= 48 && event.charCode <= 57) || event.charCode == 13 || event.charCode == 190)" maxlength="10">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.MobileNumber)" />
+                                    </div>
+                                    <!-- col -->
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Birth Date</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="birthdatelable">
+                                                <img src="images/calendar.svg"
+                                                     class="img-fluid" alt="Birthdate">
+                                            </span>
+                                            <input type="tel" @bind-value="signUpRequest.BirthDate" size=10 maxlength=10 
+                                            onkeyup="this.value=this.value.replace(/^(\d\d)(\d)$/g,'$1/$2').replace(/^(\d\d\/\d\d)(\d+)$/g,'$1/$2').replace(/[^\d\/]/g,'')" 
+                                            class="form-control" id="birthdate" placeholder="mm/dd/yyyy" aria-describedby="birthdatelable">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.BirthDate)" />
+                                    </div>
+
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="coulable">
+                                                <img src="images/Address1.svg"
+                                                     class="img-fluid" alt="Address">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.Address" class="form-control" id="address" placeholder="Enter Address"
+                                                   aria-describedby="pwdlabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.Address)" />
+                                    </div>
+
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">State</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="coulable">
+                                                <img src="images/Country1.svg"
+                                                     class="img-fluid" alt="State">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.State" class="form-control" id="state" placeholder="Enter State"
+                                                   aria-describedby="pwdlabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.State)" />
+                                    </div>
+
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">City</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="coulable">
+                                                <img src="images/Country1.svg"
+                                                     class="img-fluid" alt="City">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.City" class="form-control" id="city" placeholder="Enter City"
+                                                   aria-describedby="pwdlabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.City)" />
+                                    </div>
+
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Zip</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="coulable">
+                                                <img src="images/Country1.svg"
+                                                     class="img-fluid" alt="Zip">
+                                            </span>
+                                            <input type="number" @bind-value="signUpRequest.ZipCode" class="form-control" id="zipcode" placeholder="Enter Zip"
+                                                   aria-describedby="pwdlabel">
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.ZipCode)" />
+                                    </div>
+
+                                    <!-- col -->
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Password</label>
+                                        <div class="input-group eye-icons">
+                                            <span class="input-group-text">
+                                                <img src="images/password-form-icon.svg"
+                                                     class="img-fluid" alt="Password">
+                                            </span>
+                                            <input type="@TextType" @bind-value="signUpRequest.Password" class="form-control" placeholder="Enter Password"
+                                                   aria-describedby="newpwdlabel">
+                                            <button class="@Class" @onclick="ShowPassword"><img src="@EyeIcon" class="img-fluid" alt="User"></button>
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.Password)" />
+                                    </div>
+
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Confirm Password</label>
+                                        <div class="input-group eye-icons">
+                                            <span class="input-group-text">
+                                                <img src="images/password-form-icon.svg"
+                                                     class="img-fluid" alt="Password">
+                                            </span>
+                                            <input type="@TextConfirmType" @bind-value="signUpRequest.ConfirmPassword" class="form-control" placeholder="Enter Confirm Password"
+                                                   aria-describedby="newpwdlabel">
+                                            <button class="@ConfirmClass" @onclick="ShowPasswordConfirm"><img src="@EyeIconConfirm" class="img-fluid" alt="User"></button>
+                                        </div>
+                                        <ValidationMessage For="@(() => signUpRequest.ConfirmPassword)" />
+                                    </div>
+                                    <div class="form-group col-12 col-md-6">
+                                        <label for="text" class="form-label">Referal Code (optional)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="lnamelabel">
+                                                <img src="images/user-form-icon.svg"
+                                                     class="img-fluid" alt="User">
+                                            </span>
+                                            <input type="text" @bind-value="signUpRequest.ReferralCode" class="form-control" id="referal" placeholder="Enter Referal Code"
+                                                   aria-describedby="newpwdlabel">
+                                            <ValidationMessage For="@(() => signUpRequest.ReferralCode)" />
+                                        </div>
+                                    </div>
+                                    <!-- col -->
+                                    @*@if (string.IsNullOrWhiteSpace(signUpRequest.FrontImage))
+                                {
+                                <div class="form-group col-12">
+                                <label for="productimg" class="form-label">Upload Product Image (optional)</label>
+                                <div class="uploadFile">
+                                <img src="images/upload-file-icon.svg" id="producttype" class="img-fluid" alt="Upload File">
+                                <h5 class="filename">Click here to upload file</h5>
+                                <InputFile id="product-type" class="inputfile form-control" OnChange="HandlePhotoSelected" multiple src="@signUpRequest.FrontImage" name="file" />
+                                <ValidationMessage For="@(() => signUpRequest.Image)" />
+
+                                </div>
+                                </div>
+                                }
+                                else
+                                {
+                                <div class="room-image" style="background: url('@frontImagePath') 12% 12%; "></div>
+
+                                <div class="room-image" style="background: url('@signUpRequest.SelfieImagePath') 12% 12%; "></div>
+                                }*@
+
+
+                                    @*                                <div class="form-group col-12">
+                                <label for="productimg" class="form-label">Upload Driving License for age verification</label>
+
+                                @if (string.IsNullOrWhiteSpace(signUpRequest.FrontImage))
+                                {
+                                <div class="uploadFile">
+                                <img src="images/upload-file-icon.svg" id="producttype" class="img-fluid" alt="Upload File">
+                                <h5 class="filename">Click here to upload file</h5>
+                                <InputFile id="product-type" class="inputfile form-control" OnChange="HandlePhotoSelected" multiple src="@signUpRequest.FrontImage" name="file" />
+                                <ValidationMessage For="@(() => signUpRequest.Image)" />
+
+                                </div>
+                                }
+                                else
+                                {
+                                <div class="room-image" style="background: url('@signUpRequest.FrontImagePath') 12% 12%; ">
+                                <button type="button" class="signup-file-close-btn">
+                                <img src="images/close.svg" id="producttype" class="img-fluid" alt="Close">
+                                </button>
+                                </div>
+
+                                <div class="room-image" style="background: url('@signUpRequest.SelfieImagePath') 12% 12%; ">
+                                <button type="button" class="signup-file-close-btn">
+                                <img src="images/close.svg" id="producttype" class="img-fluid" alt="Close">
+                                </button>
+                                </div>
+                                }
+                                </div>*@
+
+                                    <!-- col -->
+                                    <div class="form-group col-12">
+                                        <div class="form-check m-0 p-0 pt-3 mt-3 mt-md-0">
+                                            <label class="form-check-label" for="flexCheckDefault">
+
+                                                <input class="form-check-input" id="check" @onclick="box" type="checkbox" @bind-value="signUpRequest.IsConditionAccepted"> <span>
+                                                    I agree with
+                                                    the
+                                                </span>
+                                                <ValidationMessage For="@(() => signUpRequest.IsConditionAccepted)" />
+                                                <a href="tandc" class="p-0 tersm-btn" data-bs-toggle="modal" data-bs-target="#termcondtnModal">Terms and Conditions</a>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6 pe-md-5 mt-3">
+                                        <button type="submit" disabled="true" @onclick="adduser" id="btn_create" class="btn btn-common">Create</button>
+                                    </div>
+                                    <!-- col -->
+                                </div>
+                            </EditForm>
+                            <!-- row -->
+                        </div>
+                        <!-- col -->
+                    </div>
+                    <!-- row -->
+                    <div class="form-footer-text">
+                        <p>Already have an account ? <a href="/sign-in">Sign In</a></p>
+                    </div>
+                </div>
+
+                @*  <div class="col-12 col-md-6 pe-md-5 mt-3">
+            <button type="submit" @onclick="GetCompany" id="btn_create" class="btn btn-common">Create</button>
+            </div>*@
+            </div>
+            <!-- background Circle Shape start -->
+            <img src="images/bg-top-circle.svg" class="img-fluid bg-top-circle position-absolute top-0 end-0" alt="Circle">
+            <img src="images/bg-half-circle.svg" class="img-fluid bg-left-circle position-fixed bottom-0 start-0" alt="Circle">
+            <img src="images/bg-half-circle.svg" class="img-fluid bg-right-circle position-fixed bottom-0 end-0" alt="Circle">
+            <!-- background Circle Shape end -->
+            <!-- bg Circle Wave Animation start -->
+            <div class="login-waves position-fixed bottom-0 start-0 end-0">
+                <div class="bg-circle-wave">
+                    <span class="wave s1"></span>
+                    <span class="wave s2"></span>
+                    <span class="wave s3"></span>
+                    <span class="wave s4"></span>
+                </div>
+            </div>
+            <!-- bg Circle Wave Animation end -->
+        </section>
+
+        <!-- T&C Modal start -->
+        <div class="modal fade shop-filter-modal" id="termcondtnModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="exampleModalLabel">Terms and Conditions</h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="terms-condt-details">
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Imperdiet enim velit nec at. Pellentesque urna, sed et euismod morbi sodales senectus. Aliquam dolor mi id libero, justo, integer tempus. Ut nunc suspendisse dictumst interdum sagittis sed.</p>
+                            <ul>
+                                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut lectus amet, arcu dictum.</li>
+                                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut lectus amet, arcu dictum.</li>
+                                <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ut lectus amet, arcu dictum.</li>
+                            </ul>
+
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Viverra mauris et enim sit. Lobortis orci, amet commodo pharetra, sagittis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--  T&C Modal end -->
+    </main>
+    <!--******************* Middle Section End ******************-->
+}
+
+@code
+{
+    private bool Loader { get; set; } = false;
+    SignUpRequest signUpRequest = new SignUpRequest();
+    public string EyeIcon = "images/Eye-Off.svg";
+    public string EyeIconConfirm = "images/Eye-Off.svg";
+    protected string TextType = "password";
+    protected string TextConfirmType = "password";
+    public string Class = "btn-pwd hide-icon";
+    public string ConfirmClass = "btn-pwd hide-icon";
+    ImageProfileUpdateRequest imageProfileUpdateRequest = new ImageProfileUpdateRequest();
+
+    bool Chekbox = false, ImgFlag = false;
+
+
+    internal async Task GoTo()
+    {
+        await JsRuntime.InvokeAsync<object>("open", "https://client.azara-app.com/sign-in", "_self");
+    }
+
+
+    internal async Task adduser()
+    {
+        if (!signUpRequest.IsConditionAccepted)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_accept_terms_conditions"]}");
+            return;
+        }
+
+        Loader = true;
+        var result = await AccountHelpers.SignUPApi(signUpRequest);
+        if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{Loc["sucsess_signup"]}");
+
+            NavManager.NavigateTo("/sign-in");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.POSError)
+        {
+            if (result.meta.message[0] == "Mobile number already exist in pos customer.")
+            {
+                Console.Write("sdfgsdfg");
+                await JsRuntime.InvokeVoidAsync("PopUp", "#customPopupModal");
+            }
+            //await JsRuntime.InvokeVoidAsync("Popupscreen");
+            //await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        else
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        Loader = false;
+    }
+
+    #region View Password
+    private async void ViewPassword(string PasswordId, string EyeId)
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("ShowPassword", PasswordId, EyeId);
+            StateHasChanged();
+        }
+        catch (Exception e) { Console.Write(e); }
+    }
+    #endregion
+
+    private async void box()
+    {
+        await JsRuntime.InvokeVoidAsync("enable");
+        StateHasChanged();
+    }
+
+
+
+    protected void ShowPassword()
+    {
+        if (this.TextType.Equals("password"))
+        {
+            Class = "btn-pwd";
+            TextType = "text";
+            EyeIcon = "images/Eye-On.svg";
+        }
+        else
+        {
+            EyeIcon = "images/Eye-Off.svg";
+            TextType = "password";
+            Class = "btn-pwd hide-icon";
+        }
+    }
+
+    protected void ShowPasswordConfirm()
+    {
+        if (this.TextConfirmType.Equals("password"))
+        {
+            TextConfirmType = "text";
+            EyeIconConfirm = "images/Eye-On.svg";
+            ConfirmClass = "btn-pwd";
+        }
+        else
+        {
+            EyeIconConfirm = "images/Eye-Off.svg";
+            TextConfirmType = "password";
+            ConfirmClass = "btn-pwd hide-icon";
+        }
+    }
+
+    public class Files
+    {
+        public string Name
+        {
+            get; set;
+        }
+    }
+
+    public List<Files> files = new List<Files>();
+    private int maxAllowedFiles = 1;
+
+    private async Task HandlePhotoSelected(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles().ToList();
+        if (files != null && files.Count > 0)
+        {
+            var fileRequest = new FileInsertUploadRequest { File = files, FileName = files.Select(s => s.Name).ToList(), FolderName = BlobContainerConsts.Age_Verification, OldFileName = new List<string> { signUpRequest.FrontImage, signUpRequest.SelfieImage } };
+
+            var result = await CommonHelpers.UploadFileApi(fileRequest);
+
+            if (result != null)
+            {
+                FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                if (response != null && response.Details != null && response.Details.Count > 0)
+                {
+                    signUpRequest.FrontImage = response.Details[0].FileName;
+                    signUpRequest.FrontImagePath = response.Details[0].FilePath;
+
+                    signUpRequest.SelfieImage = response.Details[1].FileName;
+                    signUpRequest.SelfieImagePath = response.Details[1].FilePath;
+
+                    Console.WriteLine(signUpRequest.FrontImagePath);
+                    Console.WriteLine(signUpRequest.SelfieImagePath);
+                }
+            }
+            StateHasChanged();
+        }
+    }
+}

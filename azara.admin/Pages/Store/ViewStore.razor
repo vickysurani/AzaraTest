@@ -1,0 +1,249 @@
+﻿@page "/store/view/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Store.Request
+@using azara.admin.Models.Const
+@using azara.admin.Models.Store.Response;
+
+<PageTitle>@AdminTitleModel.StoreTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title justify-content-center align-item-center">
+            <h2 class="d-lg-block d-none">View Store : </h2><h4 class="ms-1">@Title</h4>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<div class="data-table-area">
+    <div class="gray-bg">
+        <div class="filter-area justify-end align-item-center">
+            <div class="add-btn">
+                <a @onclick='e => UpdateByID(Id)' class="cancel-btn btn text-light">Edit</a>
+                <a href="/store">Cancel</a>
+            </div>
+        </div>
+        <form class="form-details m-t-15">
+            <div class="row form-details-box">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Store Name</label>
+                        <p>@ViewData.Name</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <p>@ViewData.ContactNumber</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Id</label>
+                        <p>@ViewData.EmailId</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <p>@ViewData.Address</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <p>@ViewData.Location</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <p>@ViewData.Description</p>
+                    </div>
+                    @*@if (ViewData.StoreProductDetails != null)
+                    {
+                        <div class="form-group">
+                            <label>Products</label>
+                            @foreach (var product in ViewData.StoreProductDetails)
+                            {
+                                <p>@product.ProductName :- @product.Quantity</p>
+                            }
+                        </div>
+                    }*@
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Store Image</label>
+                        <div class="row">
+                            @if (ViewData.ImageList != null && ViewData.ImageList.Count > 0)
+                            {
+                                int serial = 1;
+                                foreach (var image in ViewData.ImageList)
+                                {
+                                    <div class="col-md-4 my-2 mx-1">
+                                        <div class="room-image" style="background: url('@image') 50% 50%; ">
+                                            <span class="room-image-title">@serial</span>
+                                        </div>
+                                    </div>
+                                    serial++;
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@*Product list based on store *@
+<div class="data-table-area">
+   @*<CountDropdown ParentPagingSizeParameter="@pagingParameter.PageSize" ChangePageSize="ChangePageSize"></CountDropdown>*@
+
+    <div class="data-table">
+        <table id="table-1" class="table product-custom-table store-cate-table store-cate-table" style="width:100%">
+            <thead>
+                <tr>
+                    @*<th scope="col">Sr No</th>*@
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>QTY</th>
+                    <th>Price1</th>
+                    <th>Price2</th>
+                    <th>Price3</th>
+                    <th>Price4</th>
+                    <th>Price5</th>
+                    <th>Description</th>
+                    @*<th>EmailId</th>
+                    <th>Code</th>
+                    <th>Store Complete Address</th>*@
+                    @*<th>Description</th>*@
+                   @* @if (!IsDeleted)
+                    {
+                        <th scope="col">Status</th>
+                    }*@
+                    @*<th scope="col">Actions</th>*@
+                </tr>
+            </thead>
+            <tbody>
+                @if (ViewData.StoreProductDetails != null)
+                {
+                    @if (ViewData.StoreProductDetails.Count != 0)
+                    {
+                        int srNum = 1;
+
+                        @foreach (var storeproducts in ViewData.StoreProductDetails)
+                        {
+                            <tr>
+                                @*<th scope="row">@storeproducts.SrNo</th>*@
+                                <td>
+                                    <img src='@(!string.IsNullOrWhiteSpace(storeproducts.Image) ? storeproducts.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="imageThumbnail" alt="Featured Products for store">
+                                        @*<img src="@storeproducts.Image" class="imageThumbnail" />*@
+                                </td>
+                                <td>@storeproducts.ProductName</td>
+                                <td>@storeproducts.Quantity</td>
+                                <td>@storeproducts.Price1</td>
+                                <td>@storeproducts.Price2</td>
+                                <td>@storeproducts.Price3</td>
+                                <td>@storeproducts.Price4</td>
+                                <td>@storeproducts.Price5</td>
+                                <td>@storeproducts.Description</td>
+                               @* <td>@storeproducts.add</td>
+                                <td>@storeproducts.Code</td>
+                                <td>@storeproducts.address</td>*@
+                                @*<td>@store.description</td>*@
+                            </tr>
+                            srNum++;
+
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-danger" colspan=8><h4>No Data Found</h4></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+      @*  <Pagination ParentpagingParameter="pagingParameter" PageNumber="pagingParameter.PageNumber" SetPageChanged="SetPage"></Pagination>*@
+    </div>
+   @* <p>
+        @($"Showing {pagingParameter.FirstItemNumber} - {pagingParameter.LastItemNumber} of {pagingParameter.TotalCount}")
+    </p>*@
+</div>
+@*End product list based on store *@
+
+
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    //StoreInsertUpdateRequest ViewResponse { get; set; } = new StoreInsertUpdateRequest();
+    StoreViewByIdResponse ViewData { get; set; } = new StoreViewByIdResponse();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            ViewData.Id = Id;
+            Loader = false;
+            var result = await StoreHelpers.StoreGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                ViewData = JsonConvert.DeserializeObject<StoreViewByIdResponse>(result.data);
+                if (ViewData != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(ViewData.Image))
+                        ViewData.ImageList = JsonConvert.DeserializeObject<List<string>>(ViewData.Image);
+
+                    Title = ViewData.Name;
+                }
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Store not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+                return;
+            }
+        }
+    }
+
+    internal void UpdateByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/store/update/{cipheredId}");
+        StateHasChanged();
+    }
+}

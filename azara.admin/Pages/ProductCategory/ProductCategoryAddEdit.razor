@@ -1,0 +1,293 @@
+﻿@page "/product_category/insert"
+@page "/product_category/update/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Inventory.Response;
+@using azara.admin.Models.Poscategory.Request;
+@using azara.admin.Models.Poscategory.Response;
+@using azara.admin.Models.Product.Request
+@using azara.admin.Models.ProductCategory.Request
+@using azara.admin.Models.ProductCategory.Response
+@using azara.admin.Models.ProductSubCategory.Request
+@using azara.admin.Models.Store.Response
+@using azara.files.implementations
+@using azara.models.Responses.Dropdown
+@using azara.models.Responses.ProductSubCategory
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.ProductCategoryTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Product Category : " : "Add Product Category")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="imageRequest" OnValidSubmit="AddUpdateData">
+
+
+            <div class="gray-bg">
+                <div class="filter-area justify-end align-item-center">
+                    <div class="add-btn">
+                        <input type="submit" value="Submit Image" />
+                        <a href="/product_sub_category">Cancel</a>
+                    </div>
+                </div>
+                <form class="form-details m-t-15">
+                    <div class="row form-details-box">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Category Name</label>
+                                <p>@posCategoryData.departmentName</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Inventory product Image</label>
+                            <div id="file-upload-form" class="uploader">
+                                <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" OnChange="HandleImageUpload" />
+                                <ValidationMessage For="@(() => posCategoryData.image)" />
+                                <label for="file-upload" id="file-drag">
+                                    @if (!string.IsNullOrWhiteSpace(posCategoryData.image))
+                                    {
+
+                                        <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                            <i class="fa fa-times" aria-hidden="true"></i>
+                                        </button>
+                                    }
+                                    <img id="file-image" src="@posCategoryData.image" alt="" class="@((string.IsNullOrEmpty(posCategoryData.image)? "hidden" : ""))" @bind-Value="posCategoryData.image" @bind-Value:event="OnInput">
+                                    <div id="start">
+                                        @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                        <i class="fa fa-upload" aria-hidden="true"></i>
+                                        <div>Drag & Drop Here or </div>
+                                        <div id="notimage" class="hidden">Please select an image</div>
+                                        <a id="file-upload-btn" class="">CHoose a file</a>
+                                        <p class="second-theme-color">max. 2GB</p>
+                                    </div>
+                                    <div id="response" class="hidden d-none">
+                                        <div id="messages"></div>
+                                        <progress class="progress" id="file-progress" value="0">
+                                            <span>0</span>%
+                                        </progress>
+                                    </div>
+                                </label>
+                            </div>
+                            @*<div class="form-group">
+                        <label>Status</label>
+                        <label class="switch">
+                        <InputCheckbox class="form-control without-ic" placeholder="Enter Status"
+                        rows="12" @bind-Value=eventInsertUpdateRequest.Active aria-describedby="productsubcategorystatuslabel" checked="@eventInsertUpdateRequest.Active" aria-label="Status" />
+                        <span class="slider round"></span>
+                        </label>
+                        </div>*@
+                        </div>
+
+                    </div>
+
+                </form>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    //POSItemInventoryResponse ViewData = new POSItemInventoryResponse();
+    PosInventoryImageUpdateRequest imageRequest = new PosInventoryImageUpdateRequest();
+    PosByIdRequest request = new PosByIdRequest();
+    PosCategoryData posCategoryData = new PosCategoryData();
+    PosCategoryByIdRequest requestCategory = new PosCategoryByIdRequest();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/product_category/update/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            requestCategory.Id = Id;
+            Loader = false;
+            var result = await PosCategoryHelpers.PosCategoryGetById(requestCategory);
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                posCategoryData = JsonConvert.DeserializeObject<PosCategoryData>(result.data);
+                Title = posCategoryData.departmentName;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Product Sub Category not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Create New Product Category";
+            posCategoryData = new PosCategoryData();
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = posCategoryData.ImageList != null && posCategoryData.ImageList.Any() ? posCategoryData.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Product, OldFileName = posCategoryData.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    posCategoryData.image = response.Details[0].FilePath;
+                                    imageRequest.image = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage()
+    {
+        posCategoryData.image = new CommonHelpers(FileUpload).DeleteImage(posCategoryData.image);
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+
+        imageRequest.Id = posCategoryData.id;
+
+        var result = await PosCategoryHelpers.UpdatePosCategoryImage(imageRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                if (Id == null)
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Cetegory Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Cetegory Added Successfully!");
+                }
+                NavManager.NavigateTo("/product_category");
+            }
+            else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                if (result.meta.message[0].Contains("Cetegory not found"))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Cetegory not found");
+                    if (Id == null)
+                        NavManager.NavigateTo("/product_category");
+                    else
+                        NavManager.NavigateTo($"/product_category/view/{imageRequest.Id}");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+                    return;
+                }
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            return;
+        }
+    }
+}
+

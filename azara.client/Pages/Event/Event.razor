@@ -1,0 +1,314 @@
+﻿@page "/event"
+@using System.Text.Json.Nodes
+@using azara.client.Models;
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.EventTitle</PageTitle>
+
+<!-- Top Back Panel start -->
+<div class="position-fixed top-0 start-0 end-0 container">
+    <div class="back-panel d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center justify-content-start">
+            <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+            <h1>Events</h1>
+        </div>
+    </div>
+</div>
+<!-- Top Back Panel end -->
+<!-- Events start -->
+<section class="common-padding position-relative xs-padding">
+    <div class="container">
+        <!-- col -->
+        @if (eventListResponse.Details != null && eventListResponse.Details.Count > 0)//& eventListResponse.Details.Any(w => w.IsLocationFound))
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 contests-row gx-4">
+
+                @foreach (var data in eventListResponse.Details) //.Where(w => w.IsLocationFound)
+                {
+                    <div class="col">
+                        <a @onclick="e => GetByID(data.Id)" class="card contests-card">
+                            <div class="card-img">
+                                <img src="@data.Image" class="img-fluid" alt="Event">
+                            </div>
+                            <div class="card-text">
+                                <h5>@data.Name</h5>
+                                @if (data.Description.Length > 20)
+                                {
+                                    <h6>@data.Description.Substring(0,25)...</h6>
+                                }
+                            </div>
+                        </a>
+                        <!-- card -->
+                    </div>
+                    <!-- col -->
+                }
+                @*@if (eventListResponse.Details != null && eventListResponse.Details.Count > 0)
+            {
+            @foreach (var data in eventListResponse.Details) //.Where(w => !w.IsLocationFound))
+            {
+            <div class="col">
+            <a @onclick="e => GetByID(data.Id)" class="card contests-card">
+            <div class="card-img">
+            <img src="@data.Image" class="img-fluid" alt="Event">
+            </div>
+            <div class="card-text">
+            <h5>@data.Name</h5>
+            @if (data.Description.Length > 20)
+            {
+            <h6>@data.Description.Substring(0,25)...</h6>
+            }
+            </div>
+            </a>
+            </div>
+            }
+            }
+            else
+            {
+            <h5 class="m-0">
+            <a>
+            <img src="images/shop-icon.svg" class="img-fluid" alt="Event"> OOPS!! NO Event Found Like This
+            </a>
+            </h5>
+            }*@
+            </div>
+        }
+        else
+        {
+            <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                <div class="no-data-found text-center">
+                    <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                    <h2>Oppps...</h2>
+                    <h4>No Events Found</h4>
+                </div>
+            </section>
+        }
+        <!-- row -->
+    </div>
+</section>
+<!-- Events end -->
+<!-- Events start -->
+@*<section class="common-padding position-relative xs-padding ">
+    <div class="container">
+        <h2>All Event</h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 contests-row gx-md-3 gx-4">
+            @if (eventListResponse.Details != null && eventListResponse.Details.Count > 0)
+            {
+                @foreach (var data in eventListResponse.Details.Where(w => !w.IsLocationFound))
+                {
+                    <div class="col">
+                        <a @onclick="e => GetByID(data.Id)" class="card contests-card">
+                            <div class="card-img">
+                                <img src="images/reward-04.jpg" class="img-fluid" alt="Event">
+                            </div>
+                            <div class="card-text">
+                                <h3>@data.Name</h3>
+                                <h5>@data.Description</h5>
+                            </div>
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <h5 class="m-0">
+                    <a>
+                        <img src="images/shop-icon.svg" class="img-fluid" alt="Event"> OOPS!! NO Event Found Like This
+                    </a>
+                </h5>
+            }
+        </div>
+        <!-- row -->
+    </div>
+</section>*@
+<!-- Events end -->
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+
+@code {
+    EventResponse eventListResponse = new EventResponse();
+    ListRequest listRequest = new ListRequest();
+
+    int PageSize = 10;
+    bool Loader = true;
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        Loader = true;
+        var token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+
+        var location = await JsRuntime.InvokeAsync<JsonArray>("getCoords");
+        if (location != null)
+        {
+            await localStorage.SetItemAsync("locationDetail", location.ToString());
+            listRequest.LocationDetail = location.ToString();
+        }
+        ////await StartHubConnection();
+        await LoadEventData();
+        //await GetList();
+        //await DeleteList();
+        //await UpdateList();
+        //await StatusUpdateList();
+        Loader = false;
+
+        await InvokeAsync(StateHasChanged);
+        Loader = false;
+    }
+
+    public async Task LoadEventData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+        var result = await EventHelpers.EventListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                eventListResponse = JsonConvert.DeserializeObject<EventResponse>(result.data);
+                await InvokeAsync(StateHasChanged);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+        }
+        Loader = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    //internal void UpdateEventStatus(EventUpdateStatus eventUpdateStatus)
+    //{
+    //    eventListResponse.Details.First(x => x.Id.Equals(eventUpdateStatus.Id)).Active = eventUpdateStatus.Active;
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+
+    internal void GetByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/event-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    //private HubConnection hubConnection;
+
+
+    //private async Task StartHubConnection()
+    //{
+    //    hubConnection = new HubConnectionBuilder()
+    //        .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+    //        .WithAutomaticReconnect()
+    //        .Build();
+
+    //    await hubConnection.StartAsync();
+
+    //    if (hubConnection.ConnectionId != null)
+    //        await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+    //    await InvokeAsync(StateHasChanged);
+    //}
+
+    //internal async Task GetList()
+    //{
+    //    try
+    //    {
+    //        hubConnection.On<dynamic>("event_insert", async (data) =>
+    //        {
+    //            string encodedMsg = $"{data}";
+    //            if (!string.IsNullOrWhiteSpace(encodedMsg))
+    //            {
+    //                await LoadEventData();
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+    //    }
+    //}
+
+    //internal async Task UpdateList()
+    //{
+    //    try
+    //    {
+    //        hubConnection.On<dynamic>("event_update", async (data) =>
+    //        {
+    //            string encodedMsg = $"{data}";
+    //            if (!string.IsNullOrWhiteSpace(encodedMsg))
+    //            {
+    //                await LoadData();
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+    //    }
+    //}
+
+    //internal async Task StatusUpdateList()
+    //{
+    //    try
+    //    {
+    //        hubConnection.On<dynamic>("event_status_update", async (data) =>
+    //        {
+    //            string encodedMsg = $"{data}";
+    //            if (!string.IsNullOrWhiteSpace(encodedMsg))
+    //            {
+    //                await LoadEventData();
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+    //    }
+    //}
+
+    //internal async Task DeleteList()
+    //{
+    //    try
+    //    {
+    //        hubConnection.On<dynamic>("event_delete", async (data) =>
+    //        {
+    //            string encodedMsg = $"{data}";
+    //            if (!string.IsNullOrWhiteSpace(encodedMsg))
+    //            {
+    //                await LoadEventData();
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+    //    }
+    //}
+
+}

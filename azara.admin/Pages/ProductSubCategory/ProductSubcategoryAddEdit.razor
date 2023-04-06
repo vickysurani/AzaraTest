@@ -1,0 +1,256 @@
+﻿@page "/product_sub_category/insert"
+@page "/product_sub_category/update/{Id}"
+
+
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Product.Request
+@using azara.admin.Models.ProductCategory.Request
+@using azara.admin.Models.ProductCategory.Response
+@using azara.admin.Models.Store.Response
+@using azara.files.implementations
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.ProductSubCategoryTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Product sub Category : " : "Add Product sub Category")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="posSubCetegoryInsertUpdateRequest" OnValidSubmit="InsertUpdateProductCategoryItem">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="/product_category" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+            </div>
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Product Category Name</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Product Category Name" @bind-Value=posSubCetegoryInsertUpdateRequest.Name aria-describedby="productcategorynamelabel" aria-label="Product Category Name" />
+                        <ValidationMessage For="@(() => posSubCetegoryInsertUpdateRequest.Name)" />
+                    </div>
+                    @*<div class="form-group">
+                <label>Status</label>
+                <label class="switch">
+                <InputCheckbox class="form-control without-ic" placeholder="Enter Status"
+                rows="12" @bind-Value=productCategoryInsertUpdateRequest.Status aria-describedby="productcategorystatuslabel" checked="@productCategoryInsertUpdateRequest.Status" aria-label="Status" />
+                <span class="slider round"></span>
+                </label>
+                </div>*@
+                </div>
+                <div class="col-md-6">
+                    <div id="file-upload-form" class="uploader">
+                        <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" @bind-Value="posSubCetegoryInsertUpdateRequest.Image" @bind-Value:event="OnInput" OnChange="HandleImageUpload" />
+                        <label for="file-upload" id="file-drag">
+                            @if (!string.IsNullOrWhiteSpace(posSubCetegoryInsertUpdateRequest.Image))
+                            {
+                                <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                    <i class="fa fa-times" aria-hidden="true"></i>
+                                </button>
+                            }
+                            <img id="file-image" src="@posSubCetegoryInsertUpdateRequest.Image" alt="" class="@((string.IsNullOrEmpty(posSubCetegoryInsertUpdateRequest.Image)? "hidden" : ""))" @bind-Value="posSubCetegoryInsertUpdateRequest.Image" @bind-Value:event="OnInput">
+                            <div id="start">
+                                @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                <i class="fa fa-upload" aria-hidden="true"></i>
+                                <div>Drag & Drop Here or </div>
+                                <div id="notimage" class="hidden">Please select an image</div>
+                                <a id="file-upload-btn" class="">CHoose a file</a>
+                                <p class="second-theme-color">max. 2GB</p>
+                            </div>
+                            <div id="response" class="hidden d-none">
+                                <div id="messages"></div>
+                                <progress class="progress" id="file-progress" value="0">
+                                    <span>0</span>%
+                                </progress>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    private Guid ProductCategoryId { get; set; }
+    public bool IsUpdate = false;
+
+    PosSubCetegoryInsertUpdateRequest posSubCetegoryInsertUpdateRequest { get; set; } = new();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    PosByIdRequest posByIdRequest = new PosByIdRequest();
+    PosByIntIdRequest posByIntIdRequest = new PosByIntIdRequest();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            posByIntIdRequest.Id = Int32.Parse(Id);
+            Loader = false;
+            var result = await ProductCategoryHelpers.ProductSubCategoryGetById(posByIntIdRequest);
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                posSubCetegoryInsertUpdateRequest = JsonConvert.DeserializeObject<PosSubCetegoryInsertUpdateRequest>(result.data);
+                Title = posSubCetegoryInsertUpdateRequest.Name;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Product Sub Category not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something went wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Create New Productc Category";
+            posSubCetegoryInsertUpdateRequest = new PosSubCetegoryInsertUpdateRequest();
+        }
+    }
+
+    internal async Task InsertUpdateProductCategoryItem()
+    {
+        Loader = true;
+        Id = GenericHelper.Decipher(Id, 3);
+        posSubCetegoryInsertUpdateRequest.ProductSubCategoryId = Int32.Parse(Id);
+        var result = await ProductCategoryHelpers.ProductSubCategoryInsertUpdateApi(posSubCetegoryInsertUpdateRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (posSubCetegoryInsertUpdateRequest.ProductSubCategoryId != null)
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Product Sub Category Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Product Sub Category Insert Successfully!");
+                }
+                NavManager.NavigateTo("/product_sub_category");
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = posSubCetegoryInsertUpdateRequest.ImageList != null && posSubCetegoryInsertUpdateRequest.ImageList.Any() ? posSubCetegoryInsertUpdateRequest.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Product, OldFileName = posSubCetegoryInsertUpdateRequest.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    posSubCetegoryInsertUpdateRequest.Image = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage()
+    {
+        posSubCetegoryInsertUpdateRequest.Image = new CommonHelpers(FileUpload).DeleteImage(posSubCetegoryInsertUpdateRequest.Image);
+    }
+}

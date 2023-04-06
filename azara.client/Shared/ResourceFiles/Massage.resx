@@ -1,0 +1,330 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="email_sub_change_password" xml:space="preserve">
+    <value>Azara Account Password Is Changed</value>
+  </data>
+  <data name="email_sub_forgot_password" xml:space="preserve">
+    <value>Password Verification Code Received</value>
+  </data>
+  <data name="email_verified" xml:space="preserve">
+    <value>Your email is now successfully verified</value>
+  </data>
+  <data name="email_verify_otp_received" xml:space="preserve">
+    <value>OTP Received for email verification</value>
+  </data>
+  <data name="enter_valid_email" xml:space="preserve">
+    <value>Please enter valid email</value>
+  </data>
+  <data name="error_accept_terms_conditions" xml:space="preserve">
+    <value>Please accept the terms and conditions</value>
+  </data>
+  <data name="error_account_not_found" xml:space="preserve">
+    <value>Account not found</value>
+  </data>
+  <data name="error_address_required" xml:space="preserve">
+    <value>Address field is required.</value>
+  </data>
+  <data name="error_advertisement_not_found" xml:space="preserve">
+    <value>Advertisement not found</value>
+  </data>
+  <data name="error_birthdate_required" xml:space="preserve">
+    <value>Please select a Birthday date.</value>
+  </data>
+  <data name="error_blog_not_found" xml:space="preserve">
+    <value>Blog not found</value>
+  </data>
+  <data name="error_city_required" xml:space="preserve">
+    <value>Please enter city</value>
+  </data>
+  <data name="error_code_exist" xml:space="preserve">
+    <value>Code is already exists</value>
+  </data>
+  <data name="error_confirm_password_is_not_same_with_password" xml:space="preserve">
+    <value>Confirm password is not same with password.</value>
+  </data>
+  <data name="error_confirm_password_required" xml:space="preserve">
+    <value>Confirm password  field is required.</value>
+  </data>
+  <data name="error_country_required" xml:space="preserve">
+    <value>Country  field is required.</value>
+  </data>
+  <data name="error_current_password_invalid" xml:space="preserve">
+    <value>Current Password is invalid</value>
+  </data>
+  <data name="error_current_password_required" xml:space="preserve">
+    <value>Current Password  field is required field</value>
+  </data>
+  <data name="error_current_password_same_with_new_password" xml:space="preserve">
+    <value>Current password should not same with new password</value>
+  </data>
+  <data name="error_data_format" xml:space="preserve">
+    <value>Please enter valid date</value>
+  </data>
+  <data name="error_email_exist" xml:space="preserve">
+    <value>Email is already exists</value>
+  </data>
+  <data name="error_email_not_found" xml:space="preserve">
+    <value>Email not found.</value>
+  </data>
+  <data name="error_email_not_verified" xml:space="preserve">
+    <value>Your email is not verified</value>
+  </data>
+  <data name="error_email_required" xml:space="preserve">
+    <value>Email  field is required</value>
+  </data>
+  <data name="error_enter_correct_details" xml:space="preserve">
+    <value>Failed!, Please enter correct details</value>
+  </data>
+  <data name="error_failed_to_login" xml:space="preserve">
+    <value>Failed To Login</value>
+  </data>
+  <data name="error_first_name_required" xml:space="preserve">
+    <value>First name  field is required.</value>
+  </data>
+  <data name="error_image_fromat_invalid" xml:space="preserve">
+    <value>Please select the .jpg, .png &amp; .jpeg images</value>
+  </data>
+  <data name="error_Image_required" xml:space="preserve">
+    <value>Image field is required.</value>
+  </data>
+  <data name="error_image_size_invelid" xml:space="preserve">
+    <value>Image size must be less than 5 mb</value>
+  </data>
+  <data name="error_image_upload_failed" xml:space="preserve">
+    <value>Image uploading failed</value>
+  </data>
+  <data name="error_invalid_email" xml:space="preserve">
+    <value>Please enter valid email.</value>
+  </data>
+  <data name="error_invalid_emailid_password" xml:space="preserve">
+    <value>Invalid email address &amp; password</value>
+  </data>
+  <data name="error_invalid_firstname" xml:space="preserve">
+    <value>Please enter valid firstname.</value>
+  </data>
+  <data name="error_invalid_lastname" xml:space="preserve">
+    <value>Please enter valid lasstname.</value>
+  </data>
+  <data name="error_invalid_Mobile" xml:space="preserve">
+    <value>Please enter valid Mobile number.</value>
+  </data>
+  <data name="error_invalid_otp" xml:space="preserve">
+    <value>Invalid OTP</value>
+  </data>
+  <data name="error_invalid_password_format" xml:space="preserve">
+    <value>Password must contain the Alphabet, Digits and Special charaters with atleast 8 characters.</value>
+  </data>
+  <data name="error_invalid_zipcode" xml:space="preserve">
+    <value>Please enter valid zipcode</value>
+  </data>
+  <data name="error_IP_is_already_whitelisted" xml:space="preserve">
+    <value>IP is already whitelisted</value>
+  </data>
+  <data name="error_last_name_required" xml:space="preserve">
+    <value>Last name is required.</value>
+  </data>
+  <data name="error_mobile_exist" xml:space="preserve">
+    <value>Mobile is already exists</value>
+  </data>
+  <data name="error_mobile_number_required" xml:space="preserve">
+    <value>Mobile number  field is required.</value>
+  </data>
+  <data name="error_otp_expired" xml:space="preserve">
+    <value>Otp Expired</value>
+  </data>
+  <data name="error_otp_not_found" xml:space="preserve">
+    <value>Please enter he OTP</value>
+  </data>
+  <data name="error_password_invalid" xml:space="preserve">
+    <value>Please enter valid password</value>
+  </data>
+  <data name="error_password_required" xml:space="preserve">
+    <value>Password field is required.</value>
+  </data>
+  <data name="error_product_category_not_found" xml:space="preserve">
+    <value>Product Category not found</value>
+  </data>
+  <data name="error_product_not_found" xml:space="preserve">
+    <value>Product not found</value>
+  </data>
+  <data name="error_something_went_wrong" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="error_state_required" xml:space="preserve">
+    <value>Please enter state</value>
+  </data>
+  <data name="error_store_not_found" xml:space="preserve">
+    <value>Store not found</value>
+  </data>
+  <data name="error_table_is_in_used" xml:space="preserve">
+    <value>Table is already in use</value>
+  </data>
+  <data name="error_title_exist" xml:space="preserve">
+    <value>Title is already exists</value>
+  </data>
+  <data name="error_token_expired" xml:space="preserve">
+    <value>Token is Expired</value>
+  </data>
+  <data name="error_username_exist" xml:space="preserve">
+    <value>Username is already exists</value>
+  </data>
+  <data name="error_user_deleted" xml:space="preserve">
+    <value>User is deleted</value>
+  </data>
+  <data name="error_user_exist" xml:space="preserve">
+    <value>User is already exists</value>
+  </data>
+  <data name="error_user_inactive" xml:space="preserve">
+    <value>User is not active</value>
+  </data>
+  <data name="error_zipcode_required" xml:space="preserve">
+    <value>Please enter zipcode</value>
+  </data>
+  <data name="ok_response_successful" xml:space="preserve">
+    <value>Your Request Has Been Performed Successfully.</value>
+  </data>
+  <data name="page_not_found" xml:space="preserve">
+    <value>Page Not Found</value>
+  </data>
+  <data name="password_reset_successfully" xml:space="preserve">
+    <value>Successfully reset your password!</value>
+  </data>
+  <data name="response_forgot_password" xml:space="preserve">
+    <value>Email is sent to  </value>
+  </data>
+  <data name="response_password_changed_successfully" xml:space="preserve">
+    <value>Your password has been changed successfully.</value>
+  </data>
+  <data name="response_request_performed_successfully" xml:space="preserve">
+    <value>Your request has been performed successfully.</value>
+  </data>
+  <data name="sucsess_login" xml:space="preserve">
+    <value>Login Sucsessfully !</value>
+  </data>
+  <data name="sucsess_signup" xml:space="preserve">
+    <value>Signup successfully!</value>
+  </data>
+  <data name="user_already_exists" xml:space="preserve">
+    <value>User is already exists.</value>
+  </data>
+  <data name="user_login_first" xml:space="preserve">
+    <value>Please Login</value>
+  </data>
+</root>

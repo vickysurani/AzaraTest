@@ -1,0 +1,421 @@
+﻿@page "/contest/insert"
+@page "/contest/update/{Id}"
+
+@using System.Text.Json.Nodes;
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Helpers
+@using azara.admin.Models.Contest.Request
+@using azara.admin.Models.Const
+@using azara.models.Responses.Dropdown;
+@using azara.models.Responses.Product;
+
+<PageTitle>@AdminTitleModel.ContestTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Contest : " : "Add Contest")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="contestInsertUpdateRequest" OnValidSubmit="AddUpdateData">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="/contest" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+            </div>
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Descriptions</label>
+                        <InputTextArea type="text" class="form-control without-ic" placeholder="Enter Descriptions" @bind-Value=contestInsertUpdateRequest.Description aria-describedby="descriptionslabel" aria-label="Descriptions" />
+                        <ValidationMessage For="@(() => contestInsertUpdateRequest.Description)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Contest Name</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Contest Name" @bind-Value=contestInsertUpdateRequest.ContestName aria-describedby="contestnamelabel" aria-label="Contest Name" />
+                        <ValidationMessage For="@(() => contestInsertUpdateRequest.ContestName)" />
+                    </div>
+                   @* <div class="form-group">
+                        <label>Contest Type</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Contest Type" @bind-Value=contestInsertUpdateRequest.ContestType aria-describedby="contesttypelabel" aria-label="Contest Type" />
+                        <ValidationMessage For="@(() => contestInsertUpdateRequest.ContestType)" />
+                    </div>*@
+                    <div class="form-group">
+                        <label>Location</label>
+                        <InputText class="form-control without-ic" placeholder="Location" @bind-Value=contestInsertUpdateRequest.Location aria-describedby="locationlabel" aria-label="location" />
+                        <ValidationMessage For="@(() => contestInsertUpdateRequest.Location)" />
+                    </div>
+                    <div class="form-group">
+                        <div class="form-group select-filter">
+                            <label>Contest Type</label>
+                            <InputSelect id="OfferLabel" @bind-Value="contestInsertUpdateRequest.ContestType" @oninput='SetContestType' class="form-control without-ic" data-jcf='{"wrapNative": false, "wrapNativeOnMobile": false, "fakeDropInBody": false, "useCustomScroll": false}'>
+                                <optgroup>
+                                    <option value="Select" selected disabled="disabled">(Choose Offer Lable)</option>
+                                    <option value="Offline">Offline</option>
+                                    <option value="Online">Online</option>
+                                </optgroup>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => contestInsertUpdateRequest.ContestType)" />
+
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <label>Store</label>
+                        <button class="btn btn-secondary dropdown-toggle" type="button"
+                                id="sampleDropdownMenu" data-toggle="dropdown">
+                            Select Store
+                        </button>
+                        <div class="form-group position-static m-0">
+                            <ul class="dropdown-menu checkbox-menu allow-focus">
+                                <li>
+                                    <label>
+                                        Choose Nearest Store
+                                    </label>
+                                </li>
+                                @foreach (var store in StoreList.Where(w => w.IsLocationFound))
+                                {
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" id="checkId" checked='@(!string.IsNullOrWhiteSpace(contestInsertUpdateRequest.StoreDropdownId) && contestInsertUpdateRequest.StoreDropdownId.Contains(store.Id))' @onchange="(() => SetStoreData(store.Id))" /> @store.Name
+                                        </label>
+                                    </li>
+                                }
+                                <li>
+                                    <label>
+                                        Choose Other Store
+                                    </label>
+                                </li>
+                                @foreach (var store in StoreList.Where(w => !w.IsLocationFound))
+                                {
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" id="checkId" checked='@(!string.IsNullOrWhiteSpace(contestInsertUpdateRequest.StoreDropdownId) && contestInsertUpdateRequest.StoreDropdownId.Contains(store.Id))' @onchange="(() => SetStoreData(store.Id))" /> @store.Name
+                                        </label>
+                                    </li>
+                                }
+                            </ul>
+                            <ValidationMessage For="@(() => insertUpdateRequest.StoreDropdownId)" />
+                        </div>
+                        <div class="form-group store-form-group">
+                            @foreach (var store in SelectedStoreIds)
+                            {
+                                <div class="col-md-3 my-2 position-relative">
+                                    <div class="border" id="checkId">
+                                        <span>
+                                            @(StoreList.FirstOrDefault(f => f.Id.Equals(store))?.Name)
+                                        </span>
+                                    </div>
+                                    <button type="button" class="delete-Storea file-close-btn" @onclick="(() => DeleteStoreData(store))">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                    @*<div class="form-group">
+                        <label>Status</label>
+                        <label class="switch">
+                            <InputCheckbox class="form-control without-ic" placeholder="Enter Status"
+                                       rows="12" @bind-Value=contestInsertUpdateRequest.Active aria-describedby="conteststatuslabel" checked="@contestInsertUpdateRequest.Active" aria-label="Status" />
+                            <span class="slider round"></span>
+                        </label>
+                    </div>*@
+                </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Image</label>
+                        <div id="file-upload-form" class="uploader">
+                            <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" @bind-Value="contestInsertUpdateRequest.Image" @bind-Value:event="OnInput" OnChange="HandleImageUpload" />
+                            <ValidationMessage For="@(() => contestInsertUpdateRequest.Image)" />
+                            <label for="file-upload" id="file-drag">
+                                @if (!string.IsNullOrWhiteSpace(contestInsertUpdateRequest.Image))
+                                {
+                                    <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </button>
+                                }
+                                <img id="file-image" src="@contestInsertUpdateRequest.Image" alt="" class="@((string.IsNullOrEmpty(contestInsertUpdateRequest.Image)? "hidden" : ""))" @bind-Value="contestInsertUpdateRequest.Image" @bind-Value:event="OnInput">
+                                <div id="start">
+                                    @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                    <i class="fa fa-upload" aria-hidden="true"></i>
+                                    <div>Drag & Drop Here or </div>
+                                    <div id="notimage" class="hidden">Please select an image</div>
+                                    <a id="file-upload-btn" class="">CHoose a file</a>
+                                    <p class="second-theme-color">max. 2GB</p>
+                                </div>
+                                <div id="response" class="hidden d-none">
+                                    <div id="messages"></div>
+                                    <progress class="progress" id="file-progress" value="0">
+                                        <span>0</span>%
+                                    </progress>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; }
+    public string Title { get; set; } 
+    public string Type { get; set; } 
+    private string StoreName { get; set; }
+    private string ProductCategoryName { get; set; }
+    private string ProductSubCategoryName { get; set; }
+    private string OfferLabel { get; set; }
+    List<string> SelectedStoreIds { get; set; } = new();
+
+    ProductInsertUpdateRequest insertUpdateRequest { get; set; } = new();
+    List<StoreDropDownResponse> StoreList { get; set; } = new();
+    ListRequest listRequest = new ListRequest();
+    LocationDetailRequest LocationDetailRequest = new();
+    List<ApiBaseDropdownResponse> ProductCategoryList { get; set; } = new();
+    List<ApiBaseDropdownResponse> ProductSubCategoryList { get; set; } = new();
+    List<ApiBaseDropdownResponse> OfferLabelList { get; set; } = new();
+
+    ContestInsertUpdateRequest contestInsertUpdateRequest = new ContestInsertUpdateRequest();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+
+    public bool IsUpdate = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                var location = await JsRuntime.InvokeAsync<JsonArray>("getCoords");
+                if (location != null)
+                {
+                    await localStorage.SetItemAsync("locationDetail", location.ToString());
+                    listRequest.LocationDetail = location.ToString();
+                }
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(listRequest.LocationDetail))
+        {
+            var dropDownList = await ProductHelpers.GetStoreProductCategory(new LocationDetailRequest { LocationDetail = listRequest.LocationDetail });
+
+            if (dropDownList.meta.statusCode == StatusCodeConsts.Success)
+            {
+                var dropDownData = JsonConvert.DeserializeObject<StoreProductCategoryResponse>(dropDownList.data);
+                StoreList = dropDownData.StoreList;
+                ProductCategoryList = dropDownData.ProductCategoryList;
+                OfferLabelList = dropDownData.OfferLabelList;
+
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            contestInsertUpdateRequest.Id = Id;
+
+            Loader = false;
+            var result = await ContestHelpers.ContestGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                contestInsertUpdateRequest = JsonConvert.DeserializeObject<ContestInsertUpdateRequest>(result.data);
+                //contestInsertUpdateRequest.StoreDropdownId.ToList() = SelectedStoreIds;
+                if(contestInsertUpdateRequest.StoreDropdownId != null)
+                {
+                    SelectedStoreIds = JsonConvert.DeserializeObject<List<string>>(contestInsertUpdateRequest.StoreDropdownId);
+                }
+                
+                Title = contestInsertUpdateRequest.ContestName;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Contest not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something went wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New Contest";
+            contestInsertUpdateRequest = new ContestInsertUpdateRequest();
+        }
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+        contestInsertUpdateRequest.Id = Id;
+        if (SelectedStoreIds != null && SelectedStoreIds.Count > 0)
+        {
+            contestInsertUpdateRequest.StoreDropdownId = JsonConvert.SerializeObject(SelectedStoreIds);
+        }
+        else
+        {
+            Loader = false;
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the store!");
+            return;
+        }
+        if (contestInsertUpdateRequest.Image == null)
+        {
+            contestInsertUpdateRequest.Image = "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png";
+        }
+        var result = await ContestHelpers.ContestAddUpdateApi(contestInsertUpdateRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(contestInsertUpdateRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Contest Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Contest Insert Successfully!");
+                }
+                NavManager.NavigateTo("/contest");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = contestInsertUpdateRequest.ImageList != null && contestInsertUpdateRequest.ImageList.Any() ? contestInsertUpdateRequest.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Contest, OldFileName = contestInsertUpdateRequest.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    contestInsertUpdateRequest.Image = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private void SetStoreData(ChangeEventArgs e)
+    {
+        insertUpdateRequest.StoreDropdownId = new(e.Value.ToString());
+        StoreName = StoreList.FirstOrDefault(f => f.Id.Equals(insertUpdateRequest.StoreDropdownId))?.Name;
+    }
+
+    private void SetContestType(ChangeEventArgs e)
+    {
+        contestInsertUpdateRequest.ContestType = e.Value.ToString();
+        Type = contestInsertUpdateRequest.ContestType.ToString();
+
+    }
+
+    private void SetStoreData(string storeId)
+    {
+        if (SelectedStoreIds.Contains(storeId))
+            SelectedStoreIds.Remove(storeId);
+        else
+            SelectedStoreIds.Add(storeId);
+    }
+
+    private async void DeleteStoreData(string storeId)
+    {
+        SelectedStoreIds.Remove(storeId);
+        await JsRuntime.InvokeVoidAsync("uncheck");
+        StateHasChanged();
+
+    }
+
+    private async Task DeleteImage()
+    {
+        contestInsertUpdateRequest.Image = new CommonHelpers(FileUpload).DeleteImage(contestInsertUpdateRequest.Image);
+    }
+}

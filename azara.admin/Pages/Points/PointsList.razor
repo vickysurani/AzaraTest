@@ -1,0 +1,239 @@
+﻿@page "/points"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Const
+@using azara.admin.Models.Points.Response
+@using azara.admin.Models.Shared
+
+<PageTitle>@AdminTitleModel.PointsTitle</PageTitle>
+
+<!--******************* Middle Section Start ******************-->
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title">
+            <h2 class="d-lg-block d-none">Point History</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<h2 class="d-lg-none d-block mt-3">Manage Points</h2>
+<div class="data-table-area">
+    <div class="filter-area align-item-center">
+
+        <div class="head-topbar-search">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <input type="text" class="form-custom" placeholder="Search" @bind-value="@listRequest.UserName" />
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="SearchData">Search</a>
+            </div>
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="Clear">Clear</a>
+            </div>
+        </div>
+
+    </div>
+    <CountDropdown ParentPagingSizeParameter="@pagingParameter.PageSize" ChangePageSize="ChangePageSize"></CountDropdown>
+
+    <div class="data-table">
+        <table id="table-1" class="table product-custom-table store-cate-table store-cate-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th scope="col">Sr No</th>
+                    <th>User Name</th>
+                    <th>Available Points</th>
+                    <th>Used Points</th>
+                    <th>Point Name</th>
+                    <th>Point Redeem Date</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (pointsListResponse.Details != null)
+                {
+                    @if (pointsListResponse.Details.Count != 0)
+                    {
+                        @foreach (var points in pointsListResponse.Details)
+                        {
+                            <tr>
+                                <th scope="row">@points.SrNo</th>
+                                 <td>@points.UserName</td>
+                                <th>@points.AvailablePoints</th>
+                                <td>@points.UsedPoints</td>
+                                <td>@points.LastPointName</td>
+                                <td>@points.RedeemDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <div class="view-btn btn">
+                                        <a @onclick='e => UpdateByID(points.UserId, "view")'><img src="images/eye-ic.png" alt="eye-ic" /></a>
+                                    </div>
+                                   @* <div class="view-btn edit-btn btn">
+                                        <a @onclick='e => UpdateByID(points.Id, "edit")'><img src="images/edit-ic.png" alt="edit-ic" />Edit</a>
+                                    </div>*@
+                                </td>
+                                
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-danger" colspan=8><h4>No Data Found</h4></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        <Pagination ParentpagingParameter="pagingParameter" PageNumber="pagingParameter.PageNumber" SetPageChanged="SetPage"></Pagination>
+    </div>
+    <p>
+        @($"Showing {pagingParameter.FirstItemNumber} - {pagingParameter.LastItemNumber} of {pagingParameter.TotalCount}")
+    </p>
+</div>
+
+@if (Loader == true)
+{
+    <Loader></Loader>
+}
+
+@code {
+
+    PointsListResponse pointsListResponse = new PointsListResponse();
+    ListRequest listRequest = new ListRequest();
+    public PagingParameter pagingParameter { get; set; } = new PagingParameter();
+    int PageSize = 10;
+    bool Loader = true, IsDeleted = false, IsShowTable = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id, string value = null)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            if (value.Equals("view"))
+                NavManager.NavigateTo($"/points/view/{cipheredId}");
+            //if (value.Equals("edit"))
+            //    NavManager.NavigateTo($"/points/update/{cipheredId}");
+        }
+
+        StateHasChanged();
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = pagingParameter.PageSize = PageSize;
+        IsDeleted = listRequest.IsDeleted;
+
+        var result = await PointsHelpers.PointsList(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            pointsListResponse = JsonConvert.DeserializeObject<PointsListResponse>(result.data);
+
+            int i = 1;
+            pointsListResponse.Details.ForEach(x =>
+            {
+                x.SrNo = (PageSize * pointsListResponse.OffSet + i);
+                i++;
+            });
+            if (pointsListResponse.Details.Count != 0)
+            {
+                pagingParameter.TotalCount = pointsListResponse.Total;
+                pagingParameter.TotalPage = (int)Math.Ceiling((decimal)pagingParameter.TotalCount / PageSize);
+                pagingParameter.PageNumber = pointsListResponse.OffSet + 1;
+                pagingParameter.CurrentPageNumber = pagingParameter.PageNumber;
+                pagingParameter.FirstItemNumber = (PageSize * pagingParameter.PageNumber) - (PageSize - 1);
+                pagingParameter.LastItemNumber = (pagingParameter.CurrentPageNumber == pagingParameter.TotalPage) ? pagingParameter.TotalCount : PageSize * pagingParameter.PageNumber;
+                pagingParameter.ShowFooter = true;
+                pagingParameter.ShowPageNumber = true;
+            }
+            else
+            {
+                pagingParameter.ShowFooter = false;
+                pagingParameter.ShowPageNumber = false;
+                pagingParameter.TotalCount = 0;
+            }
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                pointsListResponse = JsonConvert.DeserializeObject<PointsListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+    internal async void SetPage(int pagenumber)
+    {
+        await LoadData(pagenumber - 1);
+    }
+
+    #region Change Page Size
+    public async void ChangePageSize(int pageSize)
+    {
+        PageSize = pageSize;
+        pagingParameter.PageSize = pageSize;
+        await LoadData();
+    }
+    #endregion
+
+
+      private async void SearchData()
+    {
+        Loader = true;
+        listRequest.UserName = (listRequest.UserName ?? string.Empty).Trim();
+
+        await LoadData();
+
+        Loader = false;
+        StateHasChanged();
+    }
+
+    public async void Clear()
+    {
+        listRequest.UserName = string.Empty;
+        listRequest = new ListRequest();
+        await LoadData();
+
+    }
+}

@@ -1,0 +1,196 @@
+﻿@page "/product/view/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Product.Request
+@using azara.models.Responses.ProductCategory
+@using azara.models.Responses.Store
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.ProductTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">View Product : </h2><h4 class="ms-1">@Title</h4>
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <div class="gray-bg">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a @onclick='e => UpdateByID(Id)' class="cancel-btn">Edit</a>
+                    <a href="/product">Cancel</a>
+                </div>
+            </div>
+            <form class="form-details m-t-15">
+                <div class="row form-details-box">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <p>@insertUpdateRequest.Name</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <p>@insertUpdateRequest.Description</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Price</label>
+                            <p>@insertUpdateRequest.OriginalPrice</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Offer Name</label>
+                            <p>@insertUpdateRequest.offerName</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Store Name</label>
+                            @foreach( var store in StoreNameList)
+                            {
+                                <p>@(!string.IsNullOrWhiteSpace(store) ? store : store)</p>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label>Product Category</label>
+                            <p>@(!string.IsNullOrWhiteSpace(@ProductCategoryName) ? @ProductCategoryName : @insertUpdateRequest.ProductCategoryId)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Product Image</label>
+                            <div class="row">
+                                @if (insertUpdateRequest.ImageList != null && insertUpdateRequest.ImageList.Count > 0)
+                                {
+                                    int serial = 1;
+                                    foreach (var image in insertUpdateRequest.ImageList)
+                                    {
+                                        <div class="col-md-4 my-2 mx-1">
+                                            <div class="room-image" style="background: url('@image') 50% 50%; ">
+                                                <span class="room-image-title">@serial</span>
+                                            </div>
+                                        </div>
+                                        serial++;
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    ProductInsertUpdateRequest insertUpdateRequest { get; set; } = new ProductInsertUpdateRequest();
+    private string StoreName { get; set; }
+    private string ProductCategoryName { get; set; }
+    private string ProductSubCategoryName { get; set; }
+    public List<string>? Store { get; set; }
+    public List<string>? StoreNameList { get; set; } = new List<string>();
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/product/update/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            insertUpdateRequest.ProductId = Id;
+            Loader = false;
+            var result = await ProductHelpers.GetProductItem(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                insertUpdateRequest = JsonConvert.DeserializeObject<ProductInsertUpdateRequest>(result.data);
+                Store = JsonConvert.DeserializeObject<List<string>>(insertUpdateRequest.StoreDropdownId);
+                if (insertUpdateRequest != null)
+                {
+                    insertUpdateRequest.ImageList = JsonConvert.DeserializeObject<List<string>>(insertUpdateRequest.Image);
+                    foreach (var store in Store)
+                    {
+                        var storeData = await StoreHelpers.StoreGetById(new BaseIdRequest { Id = Guid.Parse(store) });
+                        if (storeData.meta.statusCode == StatusCodeConsts.Success)
+                        {
+                            var storeDetails = JsonConvert.DeserializeObject<StoreGetByIdResponse>(storeData.data);
+                            StoreName = storeDetails.Name;
+                            StoreNameList.Add(storeDetails.Name);
+                        }
+                    }
+                    PosByIdRequest posByIdRequest = new PosByIdRequest();
+                    var productCategoryData = await ProductCategoryHelpers.ProductCategoryGetById(posByIdRequest);
+                    if (productCategoryData.meta.statusCode == StatusCodeConsts.Success)
+                    {
+                        var productCategoryDetails = JsonConvert.DeserializeObject<ProductCategoryGetByIdResponse>(productCategoryData.data);
+                        ProductCategoryName = productCategoryDetails.Name;
+                    }
+                    var productSubCategoryData = await ProductSubCategoryHelpers.ProductSubCategoryGetById(new BaseIdRequest { Id = insertUpdateRequest.ProductSubCategoryId });
+                    if (productSubCategoryData.meta.statusCode == StatusCodeConsts.Success)
+                    {
+                        var productSubCategoryDetails = JsonConvert.DeserializeObject<StoreGetByIdResponse>(productSubCategoryData.data);
+                        ProductSubCategoryName = productSubCategoryDetails.Name;
+                    }
+                }
+                Title = insertUpdateRequest.Name;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{345345}");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Create New Product";
+            insertUpdateRequest = new ProductInsertUpdateRequest();
+        }
+    }
+}

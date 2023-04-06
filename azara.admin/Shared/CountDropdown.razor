@@ -1,0 +1,39 @@
+﻿<div class="d-flex align-items-center mb-2">
+    <p class="mb-0">Show :</p>
+    <div class="form-group ms-2 me-2 mb-0">
+        <div class="option-select-area operator-selector">
+            <select class="custom color form-control " @onchange="@(x => OnChangePageSize(Convert.ToInt32(x.Value)))" value="@PageSize">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+            </select>
+        </div>
+    </div>
+    <p>Entries</p>
+</div>
+
+
+@code {
+
+
+    [Parameter]
+    public int PageSize { get; set; }
+
+    [Parameter]
+    public int ParentPagingSizeParameter { get; set; }
+
+    [Parameter]
+    public EventCallback<int> ChangePageSize { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        PageSize = ParentPagingSizeParameter;
+    }
+
+    protected async Task OnChangePageSize(int pageSize)
+    {
+        await ChangePageSize.InvokeAsync(pageSize);
+    }
+
+
+}

@@ -1,0 +1,240 @@
+﻿@page "/inventory_pos"
+@using azara.client.Models.QuickBooksPOS
+
+@layout LoginLayout
+
+<div class="data-table-area" style="background: #91bb3f">
+    <div class="data-table" background-color:yellow>
+        <table id="table-1" border="1" cellpadding="11px" class="table product-custom-table store-cate-table">
+            <thead>
+                <tr style="font-size:small; font-size-adjust: inherit; font-display:auto">
+                    <th>List Id</th>
+                    <th>Account Balance</th>
+                    <th>Account Limit</th>
+                    <th>Account PastDue</th>
+                    <th>Company Name</th>
+                    <th>Customer DiscPercent</th>
+                    <th>Customer Type</th>
+                    <th>Customer ID</th>
+                    <th>Default ShipAddress</th>
+                    <th>EMail</th>
+                    <th>First Name</th>
+                    <th>Full Name</th>
+                    <th>IsAcceptingChecks</th>
+                    <th>IsNoShipToBilling</th>
+                    <th>IsOkToEMail</th>
+                    <th>IsRewardsMember</th>
+                    <th>IsUsingChargeAccount</th>
+                    <th>IsUsingWithQB</th>
+                    <th>Last Name</th>
+                    <th>Last Sale</th>
+                    <th>Notes</th>
+                    <th>Phone</th>
+                    <th>Phone2</th>
+                    <th>Phone3</th>
+                    <th>Phone4</th>
+                    <th>Price LevelNumber</th>
+                    <th>Salutation</th>
+                    <th>StoreExchange Status</th>
+                    <th>Tax Category</th>
+                    <th>Web Number</th>
+                    <th>BillAddress City</th>
+                    <th>BillAddress Country</th>
+                    <th>BillAddress PostalCode</th>
+                    <th>BillAddress State</th>
+                    <th>BillAddress Street</th>
+                    <th>BillAddress Street2</th>
+                    <th>CustomField Other</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (pOSCompanyResponse.Details != null)
+                {
+                    @if (pOSCompanyResponse.Details.Count != 0)
+                    {
+                        @foreach (var data in pOSCompanyResponse.Details)
+                        {
+                            <tr>
+                                <td>@data.Desc1</td>
+                                <td>@data.Desc2</td>
+                                <td>@data.DepartmentCode</td>
+                               @* <td>@data.StoreCode                                         </td>
+                                <td>@data.Store01StoreNumber                                </td>
+                                <td>@data.Store01StoreCode                                  </td>
+                                <td>@data.Store01StoreName                                  </td>
+                                <td>@data.Store01AddressStreet                              </td>
+                                <td>@data.Store01CityStateZIP                               </td>
+                                <td>@data.Store01Misc1                                      </td>
+                                <td>@data.Store01Misc2                                      </td>
+                                <td>@data.Store01Misc3                                      </td>
+                                <td>@data.Store02StoreNumber                                </td>
+                                <td>@data.Store02StoreCode                                  </td>
+                                <td>@data.Store02StoreName                                  </td>
+                                <td>@data.Store02AddressStreet                              </td>
+                                <td>@data.Store02CityStateZIP                               </td>
+                                <td>@data.Store02Misc1                                      </td>
+                                <td>@data.Store02Misc2                                      </td>
+                                <td>@data.Store02Misc3                                      </td>
+                                <td>@data.Store03StoreNumber                                </td>
+                                <td>@data.Store03StoreCode                                  </td>
+                                <td>@data.Store03StoreName                                  </td>
+                                <td>@data.Store03AddressStreet                              </td>
+                                <td>@data.Store03CityStateZIP                               </td>
+                                <td>@data.Store03Misc1                                      </td>
+                                <td>@data.Store03Misc2                                      </td>
+                                <td>@data.Store03Misc3                                      </td>
+                                <td>@data.Store04StoreNumber                                </td>
+                                <td>@data.Store04StoreCode                                  </td>
+                                <td>@data.Store04StoreName                                  </td>
+                                <td>@data.Store04AddressStreet                              </td>
+                                <td>@data.Store04CityStateZIP                               </td>
+                                <td>@data.Store04Misc1                                      </td>
+                                <td>@data.Store04Misc2                                      </td>
+                                <td>@data.Store04Misc3                                      </td>
+                                <td>@data.Store05StoreNumber                                </td>
+                                <td>@data.Store05StoreCode                                  </td>
+                                <td>@data.Store05StoreName                                  </td>
+                                <td>@data.Store05AddressStreet                              </td>
+                                <td>@data.Store05CityStateZIP                               </td>
+                                <td>@data.Store05Misc1                                      </td>
+                                <td>@data.Store05Misc2                                      </td>
+                                <td>@data.Store05Misc3                                      </td>
+                                <td>@data.Store06StoreNumber                                </td>
+                                <td>@data.Store06StoreCode                                  </td>
+                                <td>@data.Store06StoreName                                  </td>
+                                <td>@data.Store06AddressStreet                              </td>
+                                <td>@data.Store06CityStateZIP                               </td>
+                                <td>@data.Store06Misc1                                      </td>
+                                <td>@data.Store06Misc2                                      </td>
+                                <td>@data.Store06Misc3                                      </td>
+                                <td>@data.Store07StoreNumber                                </td>
+                                <td>@data.Store07StoreCode                                  </td>
+                                <td>@data.Store07StoreName                                  </td>
+                                <td>@data.Store07AddressStreet                              </td>
+                                <td>@data.Store07CityStateZIP                               </td>
+                                <td>@data.Store07Misc1                                      </td>
+                                <td>@data.Store07Misc2                                      </td>
+                                <td>@data.Store07Misc3                                      </td>
+                                <td>@data.Store08StoreNumber                                </td>
+                                <td>@data.Store08StoreCode                                  </td>
+                                <td>@data.Store08StoreName                                  </td>
+                                <td>@data.Store08AddressStreet                              </td>
+                                <td>@data.Store08CityStateZIP                               </td>
+                                <td>@data.Store08Misc1                                      </td>
+                                <td>@data.Store08Misc2                                      </td>
+                                <td>@data.Store08Misc3                                      </td>
+                                <td>@data.Store09StoreNumber                                </td>
+                                <td>@data.Store09StoreCode                                  </td>
+                                <td>@data.Store09StoreName                                  </td>
+                                <td>@data.Store09AddressStreet                              </td>
+                                <td>@data.Store09CityStateZIP                               </td>
+                                <td>@data.Store09Misc1                                      </td>
+                                <td>@data.Store09Misc2                                      </td>
+                                <td>@data.Store09Misc3                                      </td>
+                                <td>@data.Store10StoreNumber                                </td>
+                                <td>@data.Store10StoreCode                                  </td>
+                                <td>@data.Store10StoreName                                  </td>
+                                <td>@data.Store10AddressStreet                              </td>
+                                <td>@data.Store10CityStateZIP                               </td>
+                                <td>@data.Store10Misc1                                      </td>
+                                <td>@data.Store10Misc2                                      </td>
+                                <td>@data.Store10Misc3                                      </td>
+                                <td>@data.PriceLevel1Name                                   </td>
+                                <td>@data.PriceLevel1Markdown                               </td>
+                                <td>@data.PriceLevel2Name                                   </td>
+                                <td>@data.PriceLevel2Markdown                               </td>
+                                <td>@data.PriceLevel3Name                                   </td>
+                                <td>@data.PriceLevel3Markdown                               </td>
+                                <td>@data.PriceLevel4Name4                                  </td>
+                                <td>@data.PriceLevel4Markdown                               </td>
+                                <td>@data.PurchaseOrderStatusInfoStatusType                 </td>
+                                <td>@data.PurchaseOrderStatusInfoStatusDescription          </td>
+                                <td>@data.LayawayStatusInfoStatusType                       </td>
+                                <td>@data.LayawayStatusInfoStatusDescription                </td>
+                                <td>@data.SalesOrderStatusInfoStatusType                    </td>
+                                <td>@data.SalesOrderStatusInfoStatusDescription             </td>
+                                <td>@data.WorkOrderStatusInfoStatusType                     </td>
+                                <td>@data.WorkOrderStatusInfoStatusDescription              </td>
+                                <td>@data.WorkOrderStatusInfoStatusDescription              </td>*@
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-danger" colspan=8><h4>No Data Found</h4></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+
+@code
+{
+    POSInventoryResponse pOSCompanyResponse = new POSInventoryResponse();
+    bool Loader = true;
+    string token;
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        Loader = true;
+        await LoadData();
+        Loader = false;
+
+        StateHasChanged();
+    }
+
+    internal async Task LoadData()
+    {
+        Loader = true;
+        var result = await POSCustomerHelpers.InventoryAPI();
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                pOSCompanyResponse = JsonConvert.DeserializeObject<POSInventoryResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+
+
+}

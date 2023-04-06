@@ -1,0 +1,99 @@
+﻿@page "/notification"
+@using azara.client.Models.Notification;
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.NotificationTitle</PageTitle>
+
+<main>
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                <h1>Notification</h1>
+            </div>
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!-- Notification start -->
+    @if (notificationGetList.Details != null && notificationGetList.Details.Count != 0)
+    {
+        <section class="common-padding position-relative sm-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-md-11 mx-auto">
+                        @foreach (var notification in notificationGetList.Details)
+                        {
+                            <!-- card -->
+                            <div class="card notification-card">
+                                <div class="card-img">
+                                    <img src="@notification.Icon" class="img-fluid" alt="@notification.Title">
+                                </div>
+                                <div class="card-text">
+                                    <h5>@notification.Title</h5>
+                                    <h6>@notification.Description</h6>
+                                    <span class="time">@notification.ReadableTime.ToString("h:mm tt")</span>
+                                </div>
+                            </div>
+                            <!-- card -->
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- col -->
+    }
+    <!-- row -->
+    <!-- Notification end -->
+</main>
+<!--******************* Middle Section End ******************-->
+@code {
+    NotificationGetList notificationGetList = new NotificationGetList();
+    bool Loader = true;
+    Guid Id;
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Loader = true;
+            var token = await localStorage.GetItemAsync<string>("token");
+            TokenResponse.Token = token;
+            Id = await localStorage.GetItemAsync<Guid>("userId");
+
+
+            await LoadData();
+            StateHasChanged();
+            Loader = false;
+        }
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        notificationGetList.Id = Id;
+        var result = await NotificationHelper.NotificationListGetById(notificationGetList);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                notificationGetList = JsonConvert.DeserializeObject<NotificationGetList>(result.data);
+                
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+}

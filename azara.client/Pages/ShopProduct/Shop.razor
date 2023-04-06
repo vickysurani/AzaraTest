@@ -1,0 +1,649 @@
+﻿@page "/shop"
+@using System.Text.Json.Nodes;
+@using azara.client.Models.Inventory.Request;
+@using azara.client.Models.POSDepartment;
+
+
+
+<PageTitle>@ClientTitleModel.ShopProductTitle</PageTitle>
+
+
+@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <!-- Circle animation img start -->
+            <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+            <!-- Circle animation img end -->
+            <!-- Azara logo start -->
+            <div class="center-logo">
+                <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+            </div>
+            <!-- Azara logo end -->
+        </div>
+    </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <!--******************* Header Section Start *********************-->
+    <header class="position-relative sm-margin ">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="top-bar-header d-flex align-items-center justify-content-start">
+                    <a href="#" class="bars custom-toggle-bar" @onclick="CustomToggleBar" data-bs-toggle="modal" data-bs-target="#side-navigation-menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </a>
+                    <h1>shop</h1>
+                </div>
+                <a href="notification" class="account-label">
+                    <img src="images/notification-icon.svg" class="img-fluid notification" alt="Notification">
+                </a>
+            </div>
+        </div>
+    </header>
+    <!--******************* Header Section End *********************-->
+    <main class="custom-main-section">
+        <!--******************* Banner Section Start *********************-->
+        <!-- Search Panel start-->
+        <section class="search-panel position-relative sm-margin">
+            <div class="container">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search" aria-label="Search" value=@listRequest.Name @onchange="SearchData" aria-describedby="search-input">
+                    <span class="input-group-text" id="search-input"><img src="images/search.svg" class="img-fluid" alt="Search"></span>
+                </div>
+            </div>
+        </section>
+        <!-- Search Panel end-->
+        <!--******************* Banner Section End *********************-->
+        <!--******************* Middle Section Start ******************-->
+        <!-- Categories Start -->
+        <section class="categories-section position-relative lg-margin">
+            <div class="container">
+                <h1>Categories</h1>
+                @if (pOSDepartmentGetList.Details != null)
+                {
+                    <!-- slider start -->
+                    <div class="swiper categorySwiper">
+                        <div class="swiper-wrapper">
+                            @*
+                    @if (pOSDepartmentGetList.Details.Count != 0)
+                    {*@
+
+                            @foreach (var category in pOSDepartmentGetList.Details)
+                            {
+                                <div class="swiper-slide">
+                                    <div class="card" @onclick="e => SubCategoryGetByID(category.ListId)">
+                                        <div class="card-img">
+                                            <a class="card-img">
+                                                <img src='@(!string.IsNullOrWhiteSpace(category.Image) ? category.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                            </a>
+                                        </div>
+                                        <h4>@category.DepartmentName</h4>
+                                    </div>
+                                </div>
+                            }
+
+                            @*}*@
+                        </div>
+                        <div class="swiper-button-next"></div>
+                        <div class="swiper-button-prev"></div>
+                    </div>
+                    <!-- slider end -->
+                }
+            </div>
+        </section>
+
+        <!-- Featured Products start -->
+        <section href="shop-product-list" class="featured-product-details position-relative xl-margin">
+            <div class="container">
+
+                @if (posInventoryResponse.Details != null)
+                {
+
+                    @if (posInventoryResponse.Details.Count != 0)
+                    {
+                        <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                            <h2 class="m-0">Featured Products</h2>
+                            @if (posInventoryResponse.Details.Count > 4)
+                            {
+                                <a href="shop-product-list" class="btn view-all-btn">View All</a>
+                            }
+                        </div>
+                        @*<div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-start">
+            @foreach (var product in posInventoryResponse.Details.Take(4))
+            {
+            <div class="col">
+            <div class="card featured-product-card position-relative">
+            <span class="discount-label position-absolute">@product.Attribute</span>
+            <a @onclick="e => GetByID(product.ListId, true)" class="card-img">
+            <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+            </a>
+            <div class="p-2">
+            <h4 class="fw-500">@product.Attribute</h4>
+            <div class="card-text d-flex align-items-start justify-content-between">
+            <h5 class="m-0">
+            <a>
+            <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+            </a>
+            </h5>
+            <div class="d-flex align-items-center justify-content-end ms-auto">
+            <del>@String.Format("{0:C}", @product.Price1)</del>
+            <h4>@String.Format("{0:C}", @product.Price2)</h4>
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+            }
+            </div>*@
+
+                        <div class="row featured-product-row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-3 gx-lg-4 justify-content-md-start">
+                            @*@foreach (var product in posInventoryResponse.Details.Take(4))*@
+                            @foreach (var product in posInventoryResponse.Details.Take(3))
+                            {
+                                <div class="col">
+                                    @*<div class="card featured-product-card position-relative">
+                    <span class="discount-label position-absolute">@product.Attribute</span>
+                    <a @onclick="e => GetByID(product.ListId, true)" class="card-img">
+                    <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                    </a>
+                    <div class="p-2">
+                    <h4 class="fw-500">@product.Attribute</h4>
+                    <div class="card-text d-flex align-items-start justify-content-between">
+                    <h5 class="m-0">
+                    <a>
+                    <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+                    </a>
+                    </h5>
+                    <div class="d-flex align-items-center justify-content-end ms-auto">
+                    <del>@String.Format("{0:C}", @product.Price1)</del>
+                    <h4>@String.Format("{0:C}", @product.Price2)</h4>
+                    </div>
+                    </div>
+                    </div>
+                    </div>*@
+                                    <a @onclick="e => GetByID(product.ListId, true)" class="card featured-product-card position-relative cursor-pointer">
+                                        @* <div class="discount-label">
+                        <span class="position-absolute">@product.Attribute</span>
+
+                        </div>*@
+                                        <div class="d-flex align-items-lg-start">
+                                            <div class="card-img">
+                                                <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                            </div>
+                                            <h4 class="fw-500 m-0">
+                                                @product.Attribute
+                                                <h5 class="fw-500 m-0">@product.Description</h5>
+                                            </h4>
+                                        </div>
+
+                                        <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                            <div class="card-text d-flex align-items-center justify-content-between">
+                                                @if (product.StoreListDetails != null)
+                                                {
+                                                    @if (product.StoreListDetails.Count != 0)
+                                                    {
+
+                                                        @foreach (var storeDetails in product.StoreListDetails.Where(s => s.IsLocationFound).Take(1))
+                                                        {
+                                                            <h5 class="m-0">
+                                                                <span class="mb-0 innter-subtitle">
+                                                                    <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@storeDetails.Name
+                                                                </span>
+                                                            </h5>
+                                                        }
+                                                    }
+                                                }
+                                                <div class="d-flex align-items-center justify-content-end ms-auto">
+                                                    <del>$ @product.Price1</del>
+                                                    <h4>$ @product.Price2</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-center">
+                            <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                                <div class="no-data-found text-center">
+                                    <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                    <h2>Oppps...</h2>
+                                    <h4>Product Not Found please try again</h4>
+                                </div>
+                            </section>
+                        </div>
+                    }
+                    <!-- row -->
+                }
+            </div>
+        </section>
+        <!-- Featured Products end -->
+    </main>
+}
+
+
+
+@code {
+    ShopProductListResponse shopProductListResponse = new ShopProductListResponse();
+    ProductCategoryResponse productCategoryListResponse = new ProductCategoryResponse();
+    ListRequest listRequest = new ListRequest();
+    PaginationRequest paginationRequest = new PaginationRequest();
+    PosInventoryResponse posInventoryResponse = new PosInventoryResponse();
+    POSInventoryListRequest pOSInventoryListRequest = new POSInventoryListRequest();
+    POSDepartmentListRequest pOSDepartmentListRequest = new POSDepartmentListRequest();
+    POSDepartmentListResponse pOSDepartmentListResponse = new POSDepartmentListResponse();
+    POSDepartmentGetList pOSDepartmentGetList = new POSDepartmentGetList();
+
+    int PageSize = 1000;
+    bool Loader = true;
+    string token;
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            //await JsRuntime.InvokeVoidAsync("categorySwiper", null);
+            token = await localStorage.GetItemAsync<string>("token");
+            TokenResponse.Token = token;
+            var location = await JsRuntime.InvokeAsync<JsonArray>("getCoords");
+            if (location != null)
+            {
+                await localStorage.SetItemAsync("locationDetail", location.ToString());
+                pOSInventoryListRequest.LocationDetail = location.ToString();
+            }
+            if (token != null && token != "" && token == TokenResponse.Token)
+            {
+                Loader = true;
+                //await LoadPoductData();
+                await LoadPosProductData();
+                string[] url = NavManager.Uri.Split('/');
+                await LoadPoductCategoryData();
+                //await GetProduct();
+                await DeleteProduct();
+                await UpdateProduct();
+                await UpdateProductStatus();
+                await UpdatePOSCategory();
+                await UpdatePOSCategoryStatus();
+                await GetList();
+                await UpdateList();
+                await DeleteList();
+                await StatusUpdateList();
+                await JsRuntime.InvokeVoidAsync("categorySwiper");
+                if (url.Last() == "shop")
+                {
+                    await StartHubConnection();
+                }
+
+
+                Loader = false;
+            }
+            else
+                NavManager.NavigateTo("/");
+
+            StateHasChanged();
+        }
+
+    }
+
+    //protected async override Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    await JsRuntime.InvokeVoidAsync("categorySwiper", null);
+    //}
+
+    //internal async Task LoadPoductData(int pageNumber = 0)
+    //{
+    //    Loader = true;
+
+    //    var result = await ShopProductHelpers.ShopProductList(listRequest);
+    //    if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+    //    {
+    //        await localStorage.SetItemAsync("token", string.Empty);
+    //        NavManager.NavigateTo("/");
+    //    }
+    //    else
+    //    {
+    //        if (result.meta.statusCode == StatusCodeConsts.Success)
+    //        {
+    //            shopProductListResponse = JsonConvert.DeserializeObject<ShopProductListResponse>(result.data);
+
+    //        }
+    //        else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+    //        {
+
+    //        }
+    //        else
+    //            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+    //    }
+    //    Loader = false;
+    //    StateHasChanged();
+    //}
+
+    internal async Task LoadPoductCategoryData()
+    {
+        Loader = true;
+        //listRequest.PageNo = pageNumber;
+        //listRequest.PageSize = PageSize;
+        //var result = await ShopProductHelpers.ProductCategoryList(listRequest);
+        var result = await POSDepartmentListHelper.DepartmentList(pOSDepartmentListRequest);
+
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+
+                //productCategoryListResponse = JsonConvert.DeserializeObject<ProductCategoryResponse>(result.data);
+                pOSDepartmentGetList = JsonConvert.DeserializeObject<POSDepartmentGetList>(result.data);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+
+            }
+            //else
+            //    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal async Task LoadPosProductData(int pageNumber = 0)
+    {
+        Loader = true;
+        paginationRequest.PageNo = pageNumber;
+        paginationRequest.PageSize = 100;
+
+        var result = await ShopProductHelpers.PosInventoryList(pOSInventoryListRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            posInventoryResponse = JsonConvert.DeserializeObject<PosInventoryResponse>(result.data);
+            //storeDetails = JsonConvert.DeserializeObject<StoreDetails>(posInventoryResponse.Details.ToList( r => r.StoreDetails ));
+            //storeDetails = JsonConvert.DeserializeObject<StoreDetails>(posInventoryResponse.Details.ToString());
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal void GetByID(string id, bool value)
+    {
+        Loader = true;
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (value)
+            NavManager.NavigateTo($"/shop-pos-product-list-detail/{cipheredId}");
+        else
+            NavManager.NavigateTo($"/store-details/{cipheredId}");
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal void SubCategoryGetByID(string id)
+    {
+        Loader = true;
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/product-sub-category/{cipheredId}");
+        Loader = false;
+        StateHasChanged();
+    }
+
+    private async void SearchData(ChangeEventArgs e)
+    {
+        //Thread.Sleep(4000);
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(e.Value.ToString()))
+        {
+            listRequest.Name = e.Value.ToString().Trim();
+            //await LoadPoductData();
+        }
+        else
+        {
+            listRequest.Name = string.Empty;
+            //await LoadPoductData();
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    private HubConnection hubConnection;
+
+
+    private async Task StartHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        //if (IsConnected)
+        //    await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+        StateHasChanged();
+    }
+
+    //internal async Task GetProduct()
+    //{
+    //    try
+    //    {
+    //        hubConnection.On<dynamic>("product_insert", async (data) =>
+    //        {
+    //            string encodedMsg = $"{data}";
+    //            if (!string.IsNullOrWhiteSpace(encodedMsg))
+    //            {
+    //                //await LoadPoductData();
+    //            }
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+    //    }
+    //}
+
+    internal async Task UpdateProduct()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("inventory_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPosProductData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdateProductStatus()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("inventory_status", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPosProductData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdatePOSCategory()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("pos_category_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdatePOSCategoryStatus()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("pos_category_status", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task DeleteProduct()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_delete", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    //await LoadPoductData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task GetList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_category_insert", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdateList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_category_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task StatusUpdateList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_category_status_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task DeleteList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_category_delete", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadPoductCategoryData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    private void CustomToggleBar()
+    {
+        JsRuntime.InvokeVoidAsync("CustomToggleBar");
+    }
+}
+

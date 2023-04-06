@@ -1,0 +1,170 @@
+﻿@page "/faqs/insert"
+@page "/faqs/update/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.FAQs.Request
+@using azara.admin.Models.FAQs.Response
+@using azara.admin.Helpers
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.FAQsTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update FAQs : " : "Add FAQs")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="fAQsRequestResponse" OnValidSubmit="AddUpdateData">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="/faqs-list" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+            </div>
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Question</label>
+                        <InputText type="text" class="form-control without-ic" placeholder="Enter Question" @bind-Value=fAQsRequestResponse.Question aria-describedby="questionlabel" aria-label="Question" />
+                        <ValidationMessage For="@(() => fAQsRequestResponse.Question)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Answer</label>
+                        <InputText type="text" class="form-control without-ic" placeholder="Enter Answer " @bind-Value=fAQsRequestResponse.Answer aria-describedby="answerlabel" aria-label="Answer" />
+                        <ValidationMessage For="@(() => fAQsRequestResponse.Answer)" />
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    FAQsRequestResponse fAQsRequestResponse = new FAQsRequestResponse();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            fAQsRequestResponse.Id = Id;
+            Loader = false;
+            var result = await FAQsHelpers.FAQsGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                fAQsRequestResponse = JsonConvert.DeserializeObject<FAQsRequestResponse>(result.data);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "FAQs not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New FAQs";
+            fAQsRequestResponse = new FAQsRequestResponse();
+        }
+        StateHasChanged();
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+        fAQsRequestResponse.Id = Id;
+        var result = await FAQsHelpers.FAQsAddUpdateApi(fAQsRequestResponse);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                if (!string.IsNullOrWhiteSpace(fAQsRequestResponse.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "FAQs Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "FAQs Added Successfully!");
+                }
+                NavManager.NavigateTo("/faqs-list");
+            }
+            else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                if (result.meta.message[0].Contains("FAQs not found"))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "FAQs not found");
+                    if (!string.IsNullOrWhiteSpace(fAQsRequestResponse.Id))
+                        NavManager.NavigateTo("/faqs/insert");
+                    else
+                        NavManager.NavigateTo($"/faqs/update/{fAQsRequestResponse.Id}");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                    return;
+                }
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+}

@@ -1,0 +1,268 @@
+﻿@page "/product-request"
+
+@inject IWebAssemblyHostEnvironment env;
+
+<PageTitle>@ClientTitleModel.ProductRequestTitle</PageTitle>
+
+<main>
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                <h1>Product Request</h1>
+            </div>
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!-- Product Request start -->
+    <section class="change-pwd-section product-request-section login-details common-padding position-relative overflow-x-hidden min-vh-100 justify-content-start">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-5 col-xl-4 mx-auto">
+                    <EditForm Model="productRequest" OnValidSubmit="AddProductRequest">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="form-group col-12">
+                                <label for="productname" class="form-label">Product Name</label>
+                                <InputText @bind-Value="@productRequest.Name" class="form-control" id="productname" placeholder="Enter Product Name" />
+                                <ValidationMessage For="@(() => productRequest.Name)" />
+
+                            </div>
+                            <!-- col -->
+                            @* @if (string.IsNullOrWhiteSpace(productRequest.Image))
+                            {
+                            <div class="form-group col-12">
+                            <label for="productimg" class="form-label">Upload Product Image (optional)</label>
+                            <div class="uploadFile">
+                            <img src="images/upload-file-icon.svg" id="producttype" class="img-fluid" alt="Upload File">
+                            <h5 class="filename">Click here to upload file</h5>
+                            <InputFile id="product-type" class="inputfile form-control" OnChange="HandlePhotoSelected" src="@productRequest.Image" name="file" />
+                            <ValidationMessage For="@(() => productRequest.Image)" />
+
+                            </div>
+                            </div>
+                            }
+                            else
+                            {
+                            <div class="room-image" style="background: url('@filePath') 50% 50%; "></div>
+                            }*@
+
+                            <div class="form-group col-12">
+                                <label for="productimg" class="form-label">Upload Product Image (optional)</label>
+                                @if (string.IsNullOrWhiteSpace(productRequest.Image))
+                                {
+                                    <div class="uploadFile">
+                                        <img src="images/upload-file-icon.svg" id="producttype" class="img-fluid" alt="Upload File">
+                                        <h5 class="filename">Click here to upload file</h5>
+                                        <InputFile id="product-type" class="inputfile form-control" OnChange="HandlePhotoSelected" src="@productRequest.Image" name="file" />
+                                        <ValidationMessage For="@(() => productRequest.Image)" />
+
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="room-image" style="background: url('@filePath') 50% 50%; ">
+                                        <button type="button" class="signup-file-close-btn">
+                                            <img src="images/close.svg" id="producttype" class="img-fluid" alt="Close">
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- col -->
+                            <div class="form-group col-12 pb-3">
+                                <label for="productdesc" class="form-label">Product Description (optional)</label>
+                                <InputTextArea @bind-Value="@productRequest.Description" class="form-control" placeholder="Enter Product Description" id="productdesc"></InputTextArea>
+                                <ValidationMessage For="@(() => productRequest.Description)" />
+
+                            </div>
+                            <!-- col -->
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-common">Submit<span></span></button>
+                            </div>
+                            <!-- col -->
+                        </div>
+                    </EditForm>
+                    <!-- row -->
+                    <!-- col -->
+                </div>
+                <!-- row -->
+            </div>
+
+            <!-- background Circle Shape start -->
+            <img src="images/bg-half-circle.svg" class="img-fluid bg-left-circle position-absolute bottom-0 start-0" alt="Circle">
+            <img src="images/bg-half-circle.svg" class="img-fluid bg-right-circle position-absolute bottom-0 end-0" alt="Circle">
+            <!-- background Circle Shape end -->
+        </div>
+    </section>
+    <!-- Product Request end -->
+</main>
+<!--******************* Middle Section End ******************-->
+@code {
+
+    azara.client.Models.Account.Request.ProductRequest productRequest = new();
+    azara.client.Models.Base.Request.BaseImageUploadRequest imageUploadRequest = new BaseImageUploadRequest();
+    ImageProfileUpdateRequest imageProfileUpdateRequest = new ImageProfileUpdateRequest();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    private string filePath { get; set; }
+    bool Loader = true, WebImgFlag = false;
+    bool IsUpdate = false, ImgFlag = false, IsModelShow = false;
+
+    string token, UserID, Displaywebimage = "display-none", webURL = "../images/azara-logo.svg";
+
+    #region Initialization
+    protected override async Task OnInitializedAsync()
+    {
+        token = await localStorage.GetItemAsync<string>("token");
+        UserID = await localStorage.GetItemAsync<string>("userId");
+        TokenResponse.Token = token;
+        if (token != null && token != string.Empty && token == TokenResponse.Token)
+        {
+            Loader = false;
+        }
+        else
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        StateHasChanged();
+    }
+    #endregion
+
+    internal async Task AddProductRequest()
+    {
+        Loader = true;
+        productRequest.UserId = UserID;
+
+        var result = await AccountHelpers.ProductRequestApi(productRequest);
+
+        if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Successfully added new product item!");
+            NavManager.NavigateTo("/profile");
+        }
+        else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            Loader = false;
+            if (result.meta.message[0].Contains("error_account_not_found"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Bad request, try again!");
+                NavManager.NavigateTo("/profile");
+            }
+            else if (result.meta.message[0].Contains("error_otp_expired"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Token is expired");
+                NavManager.NavigateTo("/profile");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+                return;
+            }
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            return;
+        }
+        Loader = false;
+    }
+
+    public class Files
+    {
+        public string Name
+        {
+            get; set;
+        }
+    }
+
+    public List<Files> files = new List<Files>();
+    private int maxAllowedFiles = 1;
+    static string path;
+    static string fileName;
+
+
+
+    private async Task HandlePhotoSelected(InputFileChangeEventArgs e)
+    {
+        //foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        //{
+        //    await JsRuntime.InvokeVoidAsync("fileUploadChange", "product-type", "producttype");
+        //    imageProfileUpdateRequest.File = file;
+        //    productRequest.Image = file.Name;
+        //    ImgFlag = true;
+        //}
+        //StateHasChanged();
+        var files = e.GetMultipleFiles().ToList();
+        if (files != null && files.Count > 0)
+        {
+            var fileRequest = new FileInsertUploadRequest { File = files, FileName = files.Select(s => s.Name).ToList(), FolderName = BlobContainerConsts.Product, OldFileName = new List<string> { productRequest.Image } };
+
+            var result = await CommonHelpers.UploadFileApi(fileRequest);
+
+            if (result != null)
+            {
+                FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                if (response != null && response.Details != null && response.Details.Count > 0)
+                {
+                    productRequest.Image = response.Details.FirstOrDefault().FileName;
+                    filePath = response.Details.FirstOrDefault().FilePath;
+                }
+            }
+            StateHasChanged();
+        }
+        //StateHasChanged();
+
+        //foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        //{
+        //    string extension = System.IO.Path.GetExtension(file.Name).ToLower();
+        //    decimal size = file.Size;
+
+        //    if (!extension.ToLower().Contains("png") && !extension.ToLower().Contains("jpg"))
+        //        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please upload image with png or jpg extension!");
+
+        //    else if (size > 512000)
+        //        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Image size must be less than 512 KB!");
+
+        //    else
+        //    {
+        //        await JsRuntime.InvokeVoidAsync("fileUploadChange", "product-type", "producttype");
+        //        productRequest.Image = file.Name;
+        //        fileName = file.Name;
+
+        //        Stream stream = file.OpenReadStream();
+        //        var pathToSave = Path.Combine($"{env.BaseAddress}", "Profile", $"{UserID}");
+
+        //        if (!Directory.Exists(pathToSave))
+        //            Directory.CreateDirectory(pathToSave);
+
+        //        path = Path.Combine(pathToSave, $"{file.Name}");
+
+        //        FileStream fs = File.Create(path);
+        //        await stream.CopyToAsync(fs);
+        //        stream.Close();
+        //        fs.Close();
+        //    }
+        //}
+
+
+        //var imageFiles = e.GetMultipleFiles();
+        //foreach (var imageFile in imageFiles)
+        //{
+        //    if (imageFile != null)
+        //    {
+        //        var resizedFile = await imageFile.RequestImageFileAsync("image/png", 300, 500);
+
+        //        using (var ms = resizedFile.OpenReadStream(resizedFile.Size))
+        //        {
+        //            var content = new MultipartFormDataContent();
+        //            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data");
+        //            content.Add(new StreamContent(ms, Convert.ToInt32(resizedFile.Size)), "image", imageFile.Name);
+        //            string a = await CommonHelpers.UploadNewFileApi(content);
+        //        }
+        //    }
+        //}
+    }
+}

@@ -1,0 +1,175 @@
+﻿@page "/dashboard"
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Dashboard.Response
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title">
+            <h2 class="d-lg-block d-none">Dashboard</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+    <div class="dashboard-card mt-5">
+        <div class="row">
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                        <span class="material-symbols-outlined">
+                            contact_mail
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Registered Users</h5>
+                        <h2>@dashboardResponse.TodaysRegisteredUserCount</h2>
+                        <h4>(Today Count)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                        <span class="material-symbols-outlined">
+                            contact_mail
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Registered Users</h5>
+                        <h2>@dashboardResponse.WeeklyRegisteredUserCount</h2>
+                        <h4>(Weekly Count)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                        <span class="material-symbols-outlined">
+                            contact_mail
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Registered Users</h5>
+                        <h2>@dashboardResponse.MonthlyRegisteredUserCount</h2>
+                        <h4>(Monthly Count)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                       <span class="material-symbols-outlined">
+                            inventory
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Products</h5>
+                        <h2>@dashboardResponse.ProductCount</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                       <span class="material-symbols-outlined">
+                            store
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Store</h5>
+                        <h2>@dashboardResponse.StoreCount</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                       <span class="material-symbols-outlined">
+                            contact_mail
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Contact Requests</h5>
+                        <h2>@dashboardResponse.ContactRequestCount</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card">
+                    <div class="card-img">
+                      <span class="material-symbols-outlined">
+                            newspaper
+                        </span>
+                    </div>
+                    <div class="card-text">
+                        <h5>Blog</h5>
+                        <h2>@dashboardResponse.BlogCount</h2>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+}
+
+
+
+@code 
+{
+    private bool Loader { get; set; } = false;
+    DashboardResponse dashboardResponse = new DashboardResponse();
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal async Task LoadData()
+    {
+        Loader = true;
+        var result = await CommonHelpers.Dashboard();
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                dashboardResponse = JsonConvert.DeserializeObject<DashboardResponse>(result.data);
+               
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,221 @@
+﻿@page "/fqa"
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.FAQsTitle</PageTitle>
+
+<main>
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                <h1>FAQ</h1>
+            </div>
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!-- FAQ start -->
+    <section class="common-padding position-relative xs-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-md-10 mx-auto">
+                    <div class="accordion" id="accordionExample">
+                        <!-- accordion item -->
+                        @if (fAQsList.Details != null)
+                        {
+                            @if (fAQsList.Details.Count != 0)
+                            {
+                                var j = 0;
+                                @foreach (var data in fAQsList.Details)
+                                {
+                                    var i = 0 + j;
+
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingTwo">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo-@i" aria-expanded="false" aria-controls="collapseTwo-@i">
+                                                @data.Question
+                                            </button>
+                                        </h2>
+                                        <div id="collapseTwo-@i" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                                            <div class="accordion-body pt-0">
+                                                <p>@data.Answer</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    j++;
+                                }
+                            }
+                            else
+                            {
+                                <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-center">
+                                    <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                                        <div class="no-data-found text-center">
+                                            <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                            <h2>Oppps...</h2>
+                                            <h4>Product Not Found please try again</h4>
+                                        </div>
+                                    </section>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <!-- col -->
+            </div>
+            <!-- row -->
+        </div>
+    </section>
+    <!-- FAQ end -->
+</main>
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+@code {
+    FAQsListResponse fAQsList = new FAQsListResponse();
+    ListRequest listRequest = new ListRequest();
+    int PageSize = 1000;
+    bool Loader = true;
+    string token;
+
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Loader = true;
+            await LoadData();
+            string[] url = NavManager.Uri.Split('/');
+            if (url.Last() == "fqa")
+            {
+                await StartHubConnection();
+            }
+            //await StartHubConnection();
+            await GetList();
+            await DeleteList();
+            await UpdateList();
+            Loader = false;
+            StateHasChanged();
+        }
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+
+        var result = await FAQsHelpers.FAQsList(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                fAQsList = JsonConvert.DeserializeObject<FAQsListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    private HubConnection hubConnection;
+
+
+    private async Task StartHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        if (hubConnection.ConnectionId != null)
+            await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+        StateHasChanged();
+    }
+
+    internal async Task GetList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("faqs_insert", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdateList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("faqs_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task DeleteList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("faqs_delete", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+}

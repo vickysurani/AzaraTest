@@ -1,0 +1,340 @@
+﻿@page "/user-pos-list"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Shared
+@using azara.admin.Models.User.Request
+@using azara.admin.Models.User.Response
+@using azara.models.Responses.User
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.PosUserTitle</PageTitle>
+@*
+//@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+  *@  <!--******************* Middle Section Start ******************-->
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title">
+                <h2 class="d-lg-block d-none">Manage User</h2>
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <h2 class="d-lg-none d-block mt-3">Manage User</h2>
+    <div class="data-table-area">
+        <div class="filter-area align-item-center">
+        </div>
+        <CountDropdown ParentPagingSizeParameter="@pagingParameter.PageSize" ChangePageSize="ChangePageSize"></CountDropdown>
+
+        <div class="data-table">
+            <table id="table-1" class="table  product-custom-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th scope="col">Sr No</th>
+                        <th @onclick="@(() => SortBy("name"))">
+                            Name
+                            <i class="fa fa-sort"></i>
+                        </th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                @if (userPosListResponse.Details != null)
+                {
+                    @if (userPosListResponse.Details.Count != 0)
+                    {
+                        @foreach (var user in userPosListResponse.Details)
+                        {
+                            <tbody>
+                                <tr>
+                                    <td>@user.SrNo</td>
+                                    <td>@user.FirstName @user.LastName</td>
+                                    <td>@user.EMail</td>
+                                    <td>@user.Phone</td>
+                                    <td>
+                                        <div class="view-btn btn">
+                                            <NavLink @onclick='e => UpdateByID(user.ListId, "view")' class="btn btn-info"><img src="images/eye-ic.png" alt="eye-ic" /></NavLink>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-danger" colspan=7><h4>No Data Found</h4></td>
+                        </tr>
+                    }
+                }
+            </table>
+            <Pagination ParentpagingParameter="pagingParameter" PageNumber="pagingParameter.PageNumber" SetPageChanged="SetPage"></Pagination>
+        </div>
+        <p>
+            @($"Showing {pagingParameter.FirstItemNumber} - {pagingParameter.LastItemNumber} of {pagingParameter.TotalCount}")
+        </p>
+    </div>
+    <!-- Modal Content-->
+    <div class="modal donate-modal" id="donate-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Team</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="() => OnConfirmationChange(false)">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="donate-blk del-img">
+                        <img src="images/delete-ico.svg" alt="delete-ico" />
+                        <h6>Are you sure you want to delete this @(DeleteUser) store?</h6>
+                        <div class="d-flex justify-content-center">
+                            <button data-dismiss="modal" class="del-btn" @onclick="() => OnConfirmationChange(true)">delete</button>
+                            <button data-dismiss="modal" @onclick="() => OnConfirmationChange(false)">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@*}*@
+
+@code {
+
+    UserListResponse userListResponse = new UserListResponse();
+    UserGetListRequest listRequest = new UserGetListRequest();
+    public PagingParameter pagingParameter { get; set; } = new PagingParameter();
+    BaseStatusUpdateRequest statusUpdateRequest = new BaseStatusUpdateRequest();
+    PaginationRequest paginationRequest = new PaginationRequest();
+    UserPosListResponse userPosListResponse = new UserPosListResponse();
+
+
+    protected string DeleteUserId { get; set; }
+    protected string DeleteUser { get; set; }
+    bool IsDeleted = false, IsShowTable = false;
+    int PageSize = 10;
+    private bool Loader { get; set; } = true;
+    private bool IsOpenDropDown { get; set; } = false;
+    public List<UserResponse> Users { get; set; } = new List<UserResponse>();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token == null)
+                NavManager.NavigateTo("/user-list");
+            else
+            {
+                TokenResponse.Token = token;
+                await LoadData();
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id, string value = null)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            if (value.Equals("view"))
+                NavManager.NavigateTo($"/pos-user/view/{cipheredId}");
+        }
+        else
+        {
+            DeleteUserId = id;
+        }
+
+        StateHasChanged();
+    }
+
+    internal async Task StatusUpdate(UserListData userData, bool isApproved, int srNum)
+    {
+        statusUpdateRequest.Id = new(userData.id.ToString());
+        statusUpdateRequest.Active = isApproved;
+
+        var result = await UserHelpers.UserStatusUpdate(statusUpdateRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                if (isApproved)
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{userData.firstName + userData.lastName} is now active.");
+                else
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{userData.firstName + userData.lastName} is now inactive.");
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("Warning");
+                await JsRuntime.InvokeVoidAsync("BaseActiveInactive", "tableActiveInactiveId-" + srNum.ToString(), userData.active);
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+    }
+
+    protected void GetUserList(IEnumerable<UserListData> userLists)
+    {
+        userListResponse.Details = userLists.ToList();
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        paginationRequest.PageNo = pageNumber;
+        paginationRequest.PageSize = pagingParameter.PageSize = PageSize;
+        IsDeleted = listRequest.IsDeleted;
+
+        var result = await UserHelpers.PosUserList(paginationRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            userPosListResponse = JsonConvert.DeserializeObject<UserPosListResponse>(result.data);
+            int i = 1;
+            userPosListResponse.Details.ForEach(x =>
+            {
+                x.SrNo = (PageSize * userPosListResponse.Offset + i);
+                i++;
+            });
+            if (userPosListResponse.Details.Count != 0)
+            {
+                pagingParameter.TotalCount = userPosListResponse.Total;
+                pagingParameter.TotalPage = (int)Math.Ceiling((decimal)pagingParameter.TotalCount / PageSize);
+                pagingParameter.PageNumber = userPosListResponse.Offset + 1;
+                pagingParameter.CurrentPageNumber = pagingParameter.PageNumber;
+                pagingParameter.FirstItemNumber = (PageSize * pagingParameter.PageNumber) - (PageSize - 1);
+                pagingParameter.LastItemNumber = (pagingParameter.CurrentPageNumber == pagingParameter.TotalPage) ? pagingParameter.TotalCount : PageSize * pagingParameter.PageNumber;
+                pagingParameter.ShowFooter = true;
+                pagingParameter.ShowPageNumber = true;
+            }
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                userListResponse = JsonConvert.DeserializeObject<UserListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal async void SetPage(int pagenumber)
+    {
+        await LoadData(pagenumber - 1);
+    }
+
+    #region Change Page Size
+    public async void ChangePageSize(int pageSize)
+    {
+        PageSize = pageSize;
+        pagingParameter.PageSize = pageSize;
+        await LoadData();
+    }
+    #endregion
+
+    private async Task OpenProfileDropDown()
+    {
+        await JsRuntime.InvokeVoidAsync("openProfileDropDown");
+    }
+
+    private async Task OnConfirmationChange(bool value)
+    {
+        if (!string.IsNullOrWhiteSpace(DeleteUserId) && value)
+        {
+            try
+            {
+                var result = await UserHelpers.DeleteUserApi(new BaseIdRequest { Id = new(DeleteUserId) });
+                if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{result.meta.message[0]}");
+                    await LoadData();
+                    NavManager.NavigateTo("/user-list");
+                }
+                else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+                {
+                    if (result.meta.message[0].Contains("User not found"))
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "User not found");
+                        NavManager.NavigateTo("/user-list");
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                        return;
+                    }
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "somthing went wrong");
+                return;
+            }
+        }
+    }
+    private async void SearchData()
+    {
+        Loader = true;
+        listRequest.Name = (listRequest.Name ?? string.Empty).Trim();
+
+        await LoadData();
+
+        Loader = false;
+        StateHasChanged();
+    }
+
+    public async void Clear()
+    {
+        listRequest.Name = string.Empty;
+        listRequest = new UserGetListRequest();
+        await LoadData();
+
+    }
+
+    public async void SortBy(string sortBy)
+    {
+        if (!String.IsNullOrEmpty(listRequest.SortBy))
+        {
+            string[] search = listRequest.SortBy.Split('_');
+            if (sortBy.Equals(search.First()))
+                listRequest.SortBy = listRequest.SortBy.Contains("desc") ? listRequest.SortBy.Replace("desc", "asc") : listRequest.SortBy.Replace("asc", "desc");
+            else
+                listRequest.SortBy = $"{sortBy}_asc";
+        }
+        else
+            listRequest.SortBy = $"{sortBy}_asc";
+
+        await LoadData();
+    }
+}
