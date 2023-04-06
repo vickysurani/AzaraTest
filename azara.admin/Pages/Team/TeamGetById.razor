@@ -1,0 +1,146 @@
+﻿@page "/team/view/{Id}"
+
+@using System.Text.RegularExpressions;
+@using azara.admin.Helpers.Generic;
+@using azara.admin.Models.TeamManagement.Request;
+@using azara.admin.Models.TeamManagement.Response;
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">View Team : </h2><h4 class="ms-1">@Title</h4>
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+
+    <div style="margin-top: 2%;">
+        <div class="filter-area justify-end align-item-center">
+            <div class="add-btn">
+                <input type="submit" value="Submit Image" />
+                <a href="/teamlist">Cancel</a>
+            </div>
+        </div>
+    </div>
+    <div class="custom-check-list-section">
+        <div class="custom-check-list-section">
+            <div class="common-bg-white px-3">
+                <h2>Applied Permissions <small>(Preview Only)</small></h2>
+                <ul class="check-listing-wrap m-0 p-0">
+                    @if (teamGetByIdResponse.permissionJson != null)
+                    {
+                        @foreach (var teamPermission in teamGetByIdResponse.menuList)
+                        {
+                            @if (teamPermission.permissionCsv != null)
+                            {
+                                string[] permission = teamPermission.permissionCsv.Split(',');
+                                string[] defaultPermission = teamPermission.permissionCsv.Split(',');
+                                @if (teamPermission.isSelected == true)
+                                {
+                                    <li class="d-flex">
+                                        <div class="custom-border d-flex align-items-center justify-content-center mr-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" checked disabled type="checkbox" value="" id="defaultCheck0">
+                                            </div>
+                                        </div>
+                                        <div class="custom-border d-flex align-items-center w-100">
+                                            <h5>@teamPermission.name</h5>
+                                            @for (int i = 0; i < @defaultPermission.Length; i++)
+                                            {
+                                                bool check = false;
+                                                var Value = defaultPermission[i];
+                                                @if (Regex.IsMatch(teamPermission.permissionCsv, $@"\b{Value}\b", RegexOptions.IgnoreCase))
+                                                {
+                                                    check = true;
+                                                }
+                                                <div class="form-check">
+                                                    <input class="form-check-input" disabled type="checkbox" checked=@check value="" id="defaultCheck1">
+                                                    <label class="form-check-label" for="defaultCheck1">
+                                                        @Value
+                                                    </label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            }
+
+                        }
+
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    public string Title { get; set; }
+
+
+    TeamDetailsGetByIdRequest teamDetailsGetByIdRequest = new TeamDetailsGetByIdRequest();
+    TeamGetByIdResponse teamGetByIdResponse = new TeamGetByIdResponse();
+    BaseGetByIdRequest baseGetByIdRequest = new BaseGetByIdRequest();
+
+    private bool Loader { get; set; } = true;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loader = true;
+        await GetTeamDetailsById();
+        Loader = false;
+    }
+
+    public async Task GetTeamDetailsById()
+    {
+        Id = GenericHelper.Decipher(Id, 3);
+
+        if (Id != string.Empty)
+        {
+            baseGetByIdRequest.Id = Guid.Parse(Id);
+            baseGetByIdRequest.PageSize = 10;
+            baseGetByIdRequest.PageNo = 0;
+            var result = await TeamHelper.TeamGetById(baseGetByIdRequest);
+
+            if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                if (result.meta.statusCode == StatusCodeConsts.Success)
+                {
+                    try
+                    {
+                        teamGetByIdResponse = JsonConvert.DeserializeObject<TeamGetByIdResponse>(result.data);
+                        Title = teamGetByIdResponse.name;
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
+                else
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "erro", $"Something went wrong");
+
+                StateHasChanged();
+
+            }
+        }
+    }
+}

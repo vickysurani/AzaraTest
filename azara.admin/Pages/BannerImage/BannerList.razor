@@ -1,0 +1,246 @@
+﻿@page "/banner"
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Banner.Response;
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Shared
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.BannerImage</PageTitle>
+
+<!--******************* Middle Section Start ******************-->
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title">
+            <h2 class="d-lg-block d-none">Manage Banner Image</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<h2 class="d-lg-none d-block mt-3">Manage Banner Image</h2>
+<div class="data-table-area">
+   @* <div class="filter-area align-item-center">
+
+        <div class="head-topbar-search">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <input type="text" class="form-custom" placeholder="Search" @bind-value="@listRequest.Name" />
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="SearchData">Search</a>
+            </div>
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="Clear">Clear</a>
+            </div>
+        </div>
+
+        <div class="justify-end flex-column flex-md-row ml-auto mr-0">
+            <div class="add-btn">
+                <a href="/bannerimage/insert1">Add Image 1</a>
+            </div>
+            <div class="add-btn">
+                <a href="/bannerimage/insert2">Add Images 2</a>
+            </div>
+             <div class="add-btn">
+                <a href="/bannerimage/insert3">Add Image 3</a>
+            </div>
+        </div>
+
+
+    </div>*@
+    <div class="data-table mt-1">
+        <table id="table-1" class="table product-custom-table store-cate-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Banner Image 1</th>
+                    <th>Banner Image 2</th>
+                    <th>Banner Image 3</th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+                @if (bannerImageListResponse.details != null && bannerImageListResponse.details.Any())
+                {
+                    int srNum = 1;
+                    @foreach (var bannerImage in bannerImageListResponse.details)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(bannerImage.bannerImage1))
+                                {
+                                    <img src="@bannerImage.bannerImage1" class="imageThumbnail" />
+                                    <a class="btn btn-primary" @onclick='e => UpdateByID(bannerImage.id, "insert1")'>update Image 1</a>
+
+                                }
+                                else
+                                {
+                                    <p>No Image</p>
+                                }
+                            </td
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(bannerImage.bannerImage2))
+                                {
+                                    <img src="@bannerImage.bannerImage2" class="imageThumbnail" />
+
+                                     <a class="btn btn-primary" @onclick='e => UpdateByID(bannerImage.id, "insert2")'>update Image 2</a>
+                                }
+                                else
+                                {
+                                    <p>No Image</p>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(bannerImage.bannerImage3))
+                                {
+                                    <img src="@bannerImage.bannerImage3" class="imageThumbnail" />
+                                     <a class="btn btn-primary" @onclick='e => UpdateByID(bannerImage.id, "insert3")'>update Image 3</a>
+                                }
+                                else
+                                {
+                                    <p>No Image</p>
+                                }
+                            </td>
+                             
+                        </tr>
+                        srNum++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td class="text-center text-danger" colspan=8><h4>No Data Found</h4></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Loader == true)
+{
+    <Loader></Loader>
+}
+
+@code {
+
+    protected string DeleteStoreId { get; set; }
+    protected string DeleteStoreItem { get; set; }
+    BannerImageListResponse bannerImageListResponse = new();
+    ListRequest listRequest = new ListRequest();
+    BaseStatusUpdateRequest statusUpdateRequest = new BaseStatusUpdateRequest();
+    public PagingParameter pagingParameter { get; set; } = new PagingParameter();
+    int PageSize = 10;
+    bool Loader = true, IsDeleted = false;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    
+
+    internal void UpdateByID(string id, string value)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+       
+            NavManager.NavigateTo($"/bannerimage/{value}/{cipheredId}");
+       
+        StateHasChanged();
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = pagingParameter.PageSize = PageSize;
+        IsDeleted = listRequest.IsDeleted;
+
+        //var result = await EventHelpers.EventList(listRequest);
+        var result = await BannerImageHelpers.BannerList(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            bannerImageListResponse = JsonConvert.DeserializeObject<BannerImageListResponse>(result.data);
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                bannerImageListResponse = JsonConvert.DeserializeObject<BannerImageListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+
+
+    private async void SearchData()
+    {
+        Loader = true;
+        listRequest.Name = (listRequest.Name ?? string.Empty).Trim();
+
+        await LoadData();
+
+        Loader = false;
+        StateHasChanged();
+    }
+
+    public async void Clear()
+    {
+        listRequest.Name = string.Empty;
+        listRequest = new ListRequest();
+        await LoadData();
+
+    }
+
+
+
+    public async void SortBy(string sortBy)
+    {
+        if (!String.IsNullOrEmpty(listRequest.SortBy))
+        {
+            string[] search = listRequest.SortBy.Split('_');
+            if (sortBy.Equals(search.First()))
+                listRequest.SortBy = listRequest.SortBy.Contains("desc") ? listRequest.SortBy.Replace("desc", "asc") : listRequest.SortBy.Replace("asc", "desc");
+            else
+                listRequest.SortBy = $"{sortBy}_asc";
+        }
+        else
+            listRequest.SortBy = $"{sortBy}_asc";
+
+        await LoadData();
+    }
+}

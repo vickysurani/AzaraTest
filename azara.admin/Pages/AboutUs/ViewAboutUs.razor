@@ -1,0 +1,132 @@
+﻿@page "/aboutus/view/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.AboutUs;
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.AboutUsTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <div class="gray-bg">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a @onclick='e => UpdateByID(Id)' class="cancel-btn btn text-light">Edit</a>
+                    <a href="/aboutus">Cancel</a>
+                </div>
+            </div>
+            <form class="form-details m-t-15">
+                <div class="row form-details-box">
+                    <div class="col-md-6">
+                        <div class="form-group Descriptions">
+                            <label>Descriptions</label>
+                            <p>@aboutusDescription</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>About Us Main Image</label>
+                            <div id="file-upload-form" class="uploader">
+                                <label for="file-upload" id="file-drag">
+                                    <img src="@aboutUsGetByIDResponse.Image" id="file-image" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; }
+
+    AboutUsData aboutusdata = new AboutUsData();
+    AboutUsDataResponse response = new AboutUsDataResponse();
+    AboutUsGetByIDResponse aboutUsGetByIDResponse = new AboutUsGetByIDResponse();
+    AboutUsUpdateRequest AboutUsRequest = new AboutUsUpdateRequest();
+
+    BlazoredTextEditor QuillHtml { get; set; } = new BlazoredTextEditor();
+    AboutUsGetRequest request = new AboutUsGetRequest();
+    MarkupString aboutusDescription => (MarkupString)aboutUsGetByIDResponse.Description;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            var result = await AboutUsHelpers.AboutUsGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                aboutUsGetByIDResponse = JsonConvert.DeserializeObject<AboutUsGetByIDResponse>(result.data);
+
+                int i = 1;
+            }
+            else
+            {
+                if (result.meta.statusCode == StatusCodeConsts.Success)
+                {
+                    aboutUsGetByIDResponse = JsonConvert.DeserializeObject<AboutUsGetByIDResponse>(result.data);
+
+                }
+                else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                {
+
+                }
+                else
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal void UpdateByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/aboutus/update/{cipheredId}");
+        StateHasChanged();
+    }
+}

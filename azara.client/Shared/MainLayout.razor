@@ -1,0 +1,16 @@
+﻿@inherits LayoutComponentBase
+
+
+
+<PageTitle>:: Azara ::</PageTitle>
+<BlazoredToasts Position="ToastPosition.TopRight" ShowProgressBar="true" RemoveToastsOnNavigation="false" Timeout="1" />
+<SideNavMenu></SideNavMenu>
+@Body
+<Footer></Footer>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("MainMenuTabActive");
+    }
+}

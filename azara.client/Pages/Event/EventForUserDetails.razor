@@ -1,0 +1,176 @@
+﻿@page "/event-for-user-details/{Id}"
+@using azara.client.Models.Event.Request;
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.EventTitle</PageTitle>
+
+<!-- Top Back Panel start -->
+<div class="position-fixed top-0 start-0 end-0 container">
+    <div class="back-panel d-flex align-items-center justify-content-start">
+        <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+        <h1>Event Details</h1>
+    </div>
+</div>
+<!-- Top Back Panel end -->
+<!-- Event Details start -->
+<section class="contests-detail common-padding position-relative coupon-reward-details min-vh-100 xs-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="row">
+                    <div class="col-lg-6 mb-4 mb-lg-0">
+                        <!-- Coupon Reward Image Start -->
+                        <div class="coupon-reward-img sm-margin">
+                            <img src="@eventResponse.Image" class="img-fluid" alt="Event">
+                        </div>
+                        <!-- Coupon Reward Image end -->
+                    </div>
+                    <div class="col-lg-6">
+                        <h2>@eventResponse.Name</h2>
+
+                        <!-- Expiry date start -->
+                        <div class="coupon-expiry-date border-bottom">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h5>Date</h5>
+                                    <h4>@eventResponse.EventDate.ToString("dddd, dd MMMM yyyy")</h4>
+                                </div>
+                                <div class="text-end">
+                                    <h5>Time</h5>
+                                    <h4>@eventResponse.Eventstarttime.ToString("hh:mm tt") To @eventResponse.Eventendtime.ToString("hh:mm tt")</h4>
+                                </div>
+                            </div>
+                            <div>
+                                <h5>Location & Address:</h5>
+                                <h4 class="d-flex align-items-center">
+                                    <img src="images/location-icon.svg" class="img-fluid me-2" alt="Location">
+                                    <a href="https://maps.google.com/?q=@eventResponse.Latitude,@eventResponse.Longitude"><p>@eventResponse.EventLocation</p></a>
+                                </h4>
+                            </div>
+                        </div>
+                        <!-- Expiry date end -->
+                    </div>
+                </div>
+
+
+                <!-- Description start -->
+                <div class="coupon-description pt-4 review-top-border">
+                    <h2>Description</h2>
+                    <p>@eventResponse.Description</p>
+                </div>
+                <!-- Description end -->
+                @*<div class="coupon-reward-btn-section" @onclick="AddEvent">
+                    <a class="btn btn-common">
+                        Attend Event
+                    </a>
+                </div>
+*@            </div>
+            <!-- col -->
+        </div>
+        <!-- row -->
+    </div>
+
+</section>
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    bool Loader = false;
+    string userId;
+
+
+    EventData eventResponse = new EventData();
+    EventAddForUser eventAddForUser = new EventAddForUser();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await localStorage.GetItemAsync<string>("token");
+        userId = await localStorage.GetItemAsync<string>("userId");
+
+
+        Id = GenericHelper.Decipher(Id, 3);
+        await EventGetById();
+    }
+
+    internal async Task EventGetById()
+    {
+        var result = await EventHelpers.EventbyID(new BaseIdRequest { Id = new(Id) });
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                eventResponse = JsonConvert.DeserializeObject<EventData>(result.data);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+        StateHasChanged();
+    }
+
+    //internal async Task AddEvent()
+    //{
+    //    Loader = true;
+    //    eventAddForUser.UserId = Guid.Parse(userId);
+    //    eventAddForUser.EventId = Guid.Parse(Id);
+
+    //    var result = await EventHelpers.EventAddForUser(eventAddForUser);
+
+    //    if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+    //    {
+    //        await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Event Added Successfully");
+    //        NavManager.NavigateTo("/event");
+    //    }
+    //    else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+    //    {
+    //        Loader = false;
+    //        if (result.meta.message[0].Contains("error_account_not_found"))
+    //        {
+    //            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Bad request, try again!");
+    //            NavManager.NavigateTo("/event");
+    //        }
+    //        else if (result.meta.message[0].Contains("error_otp_expired"))
+    //        {
+    //            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Token is expired");
+    //            NavManager.NavigateTo("/event");
+    //        }
+    //        else
+    //        {
+    //            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+    //            return;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+    //        return;
+    //    }
+    //    Loader = false;
+    //}
+}
+

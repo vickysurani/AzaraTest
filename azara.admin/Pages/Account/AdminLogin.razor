@@ -1,0 +1,158 @@
+﻿@page "/"
+@layout LoginLayout
+
+@using azara.admin.Models.Account.Request
+@using azara.admin.Models.Account.Response
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.AdminLoginTitle</PageTitle>
+
+//@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{ 
+
+    <div class="auth-sec align-item-center">
+        <div class="logo-sec justify-center">
+            @*<img src="images/big-logo.svg" alt="big-logo" />*@
+            <img src="/images/ic_launcher-web.png" alt="big-logo" />
+        </div>
+        <div class="auth-details">
+            <div class="auth-width">
+                <h1>Sign in</h1>
+                <p>Login now to manage your job made easy.</p>
+                <EditForm Model="loginRequest" OnValidSubmit="DoLogin">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label>Email address</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <img src="images/email-ic.svg"
+                                     alt="email-ic" />
+                                </span>
+                            </div>
+                            <InputText type="email" @bind-Value=loginRequest.EmailId class="form-control" id="email" placeholder="Email Address"
+                                   aria-describedby="emaillabel" aria-label="Email Address" />
+                        </div>
+                        <div class="addValidation">
+                            <ValidationMessage For="@(() => loginRequest.EmailId)" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <img src="images/pwd-ic.svg"
+                                     alt="pwd-ic" />
+                                </span>
+                            </div>
+                            <InputText type="@TextType" @bind-Value=loginRequest.Password class="form-control" id="password" placeholder="Password"
+                                   aria-describedby="pwdlabel" aria-label="Password" />
+                            <span @onclick="ShowPassword"><i class="@EyeIcon" id="eyeIcon" aria-hidden="true"></i></span>
+                        </div>
+                        <div class="addValidation">
+                            <ValidationMessage For="@(() => loginRequest.Password)" />
+                        </div>
+                    </div>
+                    <div class="forgot-link">
+                        <a href="/admin/forgot-password">Forgot Password?</a>
+                    </div>
+                    <div class="signin-btn">
+                        <input type="submit" value="Sign In" />
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    private bool Loader { get; set; } = false;
+    public string EyeIcon = "fa fa-eye-slash";
+    protected string TextType = "password";
+
+    LoginRequest loginRequest = new LoginRequest();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    public async Task DoLogin()
+    {
+        Loader = true;
+        var result = await AccountHelper.LoginAPI(loginRequest);
+        if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            Loader = false;
+            var response = JsonConvert.DeserializeObject<LoginResponse>(result.data);
+            if (response != null)
+            {
+                await localStorage.SetItemAsync("token", response.Token);
+                await localStorage.SetItemAsync("adminId", response.Id);
+                TokenResponse.Token = response.Token;
+
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Successfully login!");
+            }
+            NavManager.NavigateTo("/dashboard");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            Loader = false;
+            if (result.meta.message[0].Contains("error_account_not_found"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Invalid email address");
+                return;
+            }
+            else if (result.meta.message[0].Contains("error_password_invalid"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Invalid password");
+                return;
+            }
+            else if (result.meta.message[0].Contains("error_user_inactive"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Inactive admin");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Invalid email address & password");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            return;
+        }
+    }
+
+    protected void ShowPassword()
+    {
+        if (this.TextType.Equals("password"))
+        {
+            EyeIcon = "fa fa-eye";
+            TextType = "text";
+        }
+        else
+        {
+            EyeIcon = "fa fa-eye-slash";
+            TextType = "password";
+        }
+    }
+}

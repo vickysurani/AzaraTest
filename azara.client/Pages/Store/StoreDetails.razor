@@ -1,0 +1,406 @@
+﻿@page "/store-details/{Id}"
+@using azara.client.Models.Inventory.Request;
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.StoreTitle</PageTitle>
+
+<!--******************* Header Section Start *********************-->
+<!-- Top Back Panel start -->
+<div class="position-fixed top-0 start-0 end-0 container">
+    <div class="back-panel d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center justify-content-start">
+            <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+            <h1>Store Details</h1>
+        </div>
+    </div>
+</div>
+<!-- Top Back Panel end -->
+<!--******************* Header Section End *********************-->
+
+<section class="common-padding position-relative xs-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mx-auto">
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="product-details-slider position-relative">
+                            <!-- <div class="discount-label">30% off</div> -->
+                            <!-- slider start -->
+                            <div thumbsSlider="" class="swiper productSwiper">
+                                <div class="swiper-wrapper">
+                                    @*<div class="swiper-slide">*@
+                                    @if (ImageList != null && ImageList.Count > 0)
+                                    {
+                                        @foreach (var img in ImageList)
+                                        {
+                                            <div class="swiper-slide">
+                                                <img src="@img" class="img-fluid" alt="Store">
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="swiper-slide">
+                                            <img src="https://azaradocument.blob.core.windows.net/user/DefaultIMG.png" class="img-fluid" alt="Featured Products">
+                                        </div>
+                                        
+
+                                    }
+                                </div>
+                            </div>
+                            <div class="swiper thumbnailsSwiper">
+                                <div class="swiper-wrapper">
+                                    @*<div class="swiper-slide">*@
+                                    @if (ImageList != null && ImageList.Count > 0)
+                                    {
+                                        @foreach (var img in ImageList)
+                                        {
+                                            <div class="swiper-slide">
+                                                <img src="@img" class="img-fluid" alt="Store">
+                                            </div>
+                                        }
+
+                                    }
+                                    @*</div>*@
+                                </div>
+                            </div>
+                            <!-- slider end -->
+                        </div>
+                    </div>
+                    <!-- col -->
+                    <div class="col-lg-6">
+                        <div class="product-details-slider position-relative">
+                            <!-- caption start -->
+                            <div class="product-slider-caption featured-product-card position-relative bg-transparent rounded-0">
+                                <h2 class="pb-0">@storeGetByIdResponse.Name</h2>
+                                <ul class="my-store-contact-detail p-0 m-0">
+                                    <li class="conct-text">
+                                        <img src="images/location-mystore-icon.svg" class="img-fluid" alt="Image">
+                                        <a href="https://maps.google.com/?q=@storeGetByIdResponse.Latitude,@storeGetByIdResponse.Longitude"><p>@storeGetByIdResponse.Address</p></a>
+                                    </li>
+                                    <li>
+                                        <a href="mailto:@storeGetByIdResponse.EmailId" class="conct-text"><img src="images/email-mystore-icon.svg" class="img-fluid" alt="Email">@storeGetByIdResponse.EmailId</a>
+                                    </li>
+                                    <li>
+                                        <a href="tel:@storeGetByIdResponse.ContactNumber" class="conct-text">
+                                            <img src="images/call-mystore-icon.svg" class="img-fluid" alt="Phone">
+                                            @storeGetByIdResponse.ContactNumber
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- caption end -->
+                        </div>
+
+                        <div class="product-description border-bottom-0 mb-0">
+                            <h3>Description</h3>
+                            @if (lenth != null && lenth > 300)
+                            {
+                                <div class="collapse show" id="collapseExample">
+                                    <p>
+                                        @storeGetByIdResponse.Description.Substring(0,100) ...
+                                    </p>
+                                </div>
+                                <div class="collapse" id="collapseExample">
+                                    <p>
+                                        @storeGetByIdResponse.Description
+                                    </p>
+                                </div>
+                            }
+                            else
+                            {
+                                <p>
+                                    @storeGetByIdResponse.Description
+                                </p>
+                            }
+                        </div>
+                        @if (lenth != null && lenth > 300)
+                        {
+                            <a class="readmore-button collapsed" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"></a>
+                        }
+                    </div>
+                </div>
+                <!-- col -->
+            </div>
+            <!-- row -->
+            <!-- Products start -->
+            @*  <div class="featured-product-details mystore-detail-product position-relative md-margin review-top-border m-0">
+            <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+            <h2 class="m-0">Featured Products</h2>
+            <a href="my-store-product-list.html" class="btn view-all-btn">View All</a>
+            </div>
+            <div class="d-flex align-items-center justify-content-center m-0">
+
+            @if (storeGetByIdResponse.ProductDetail != null)
+            {
+            @if (storeGetByIdResponse.ProductDetail.Count != 0)
+            {
+            <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-start">
+            @foreach (var product in storeGetByIdResponse.ProductDetail.Take(4))
+            {
+            <div class="col">
+            <div class="card featured-product-card position-relative">
+            <span class="discount-label position-absolute">@product.OfferLabel</span>
+            <a @onclick="e => GetByID(product.Id, true)" class="card-img">
+            <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "AdminPanelImages/DefaultImage.png")' class="img-fluid" alt="Featured Products">
+            </a>
+            <div class="p-2">
+            <h4 class="fw-500">@product.Name</h4>
+            <div class="card-text d-flex align-items-start justify-content-between">
+            <h5 class="m-0">
+            <a @onclick="e => GetByID(product.StoreId, false)">
+            <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.StoreName
+            </a>
+            </h5>
+            <div class="d-flex align-items-center justify-content-end ms-auto">
+            <del>@String.Format("{0:C}", @product.OriginalPrice)</del>
+            <h4>@String.Format("{0:C}", @product.DiscountedPrice)</h4>
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            }
+
+
+            </div>
+            <!-- row -->
+            }
+            else
+            {
+            <NoDataFound></NoDataFound>
+            }
+            }
+            </div>
+            <!-- Products end -->
+
+            </div>*@
+            <!-- col -->
+            <!-- Featured Products start -->
+            <div href="shop-product-list" class="featured-product-details position-relative xl-margin">
+                    @if (storeGetByIdResponse.StoreProductDetails != null)
+                    {
+
+                        @if (storeGetByIdResponse.StoreProductDetails.Count != 0)
+                        {
+                            <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                                <h2 class="m-0">Featured Products</h2>
+                                @if (storeGetByIdResponse.StoreProductDetails.Count > 4)
+                                {
+                                    <a href="shop-product-list" class="btn view-all-btn">View All</a>
+                                }
+                            </div>
+                        <div class="row featured-product-row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-md-3 gx-4 justify-content-md-start">
+                                @foreach (var product in storeGetByIdResponse.StoreProductDetails.Take(4))
+                                {
+                                    <div class="col">
+                                        @*<div class="card featured-product-card position-relative">
+                            <span class="discount-label position-absolute">@product.Attribute</span>
+                            <a @onclick="e => GetByID(product.ListId, true)" class="card-img">
+                            <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                            </a>
+                            <div class="p-2">
+                            <h4 class="fw-500">@product.Attribute</h4>
+                            <div class="card-text d-flex align-items-start justify-content-between">
+                            <h5 class="m-0">
+                            <a>
+                            <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+                            </a>
+                            </h5>
+                            <div class="d-flex align-items-center justify-content-end ms-auto">
+                            <del>@String.Format("{0:C}", @product.Price1)</del>
+                            <h4>@String.Format("{0:C}", @product.Price2)</h4>
+                            </div>
+                            </div>
+                            </div>
+                            </div>*@
+                                        <a class="card featured-product-card position-relative" @onclick="e => GetByID(product.ListId, true)">
+                                            <div class="discount-label">
+                                                @*<span class="position-absolute">@product.ProductName</span>*@
+                                                @*<span class="position-absolute">@product.Description</span>*@
+                                            </div>
+                                            <div class="d-flex align-items-lg-start">
+                                                <div class="card-img">
+                                                    <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                                </div>
+                                                <h4 class="fw-500 m-0">
+                                                    @product.ProductName
+
+                                                    <h5>@product.Description</h5>
+                                                </h4>
+
+                                            </div>
+
+                                            <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    @* <h5 class="m-0">
+                                        <a class="mb-0">
+                                        <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+                                        </a>
+                                        </h5>*@
+                                                    <div class="d-flex align-items-center justify-content-end ms-auto">
+                                                        <del>@String.Format("{0:C}", @product.Price1)</del>
+                                                        <h4>@String.Format("{0:C}", @product.Price2)</h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-center">
+                                <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                                    <div class="no-data-found text-center">
+                                        <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                        <h2>Oppps...</h2>
+                                        <h4>Product Not Found please try again</h4>
+                                    </div>
+                                </section>
+                            </div>
+                        }
+                        <!-- row -->
+                    }
+            </div>
+        </div>
+    </div>
+    <!-- row -->
+</section>
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    int lenth;
+
+
+
+    ListRequest listRequest = new ListRequest();
+    PaginationRequest paginationRequest = new PaginationRequest();
+    StoreGetByIdResponse storeGetByIdResponse = new StoreGetByIdResponse();
+    PosInventoryResponse posInventoryResponse = new PosInventoryResponse();
+    POSInventoryListRequest pOSInventoryListRequest = new POSInventoryListRequest();
+    List<string> ImageList = new();
+    bool Loader = true;
+    int PageSize = 1000;
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loader = true;
+
+        var token = await localStorage.GetItemAsync<string>("token");
+        var userId = await localStorage.GetItemAsync<string>("userId");
+
+        Id = GenericHelper.Decipher(Id, 3);
+        await StoreGetById();
+        await LoadPosProductData();
+
+        Loader = false;
+
+
+
+    }
+
+    internal async Task StoreGetById()
+    {
+        Loader = true;
+        await JsRuntime.InvokeVoidAsync("StoreMultiImages", null);
+        var result = await StoreHelpers.StoreGetByIdApi(new BaseIdRequest { Id = new(Id) });
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                storeGetByIdResponse = JsonConvert.DeserializeObject<StoreGetByIdResponse>(result.data);
+
+                if (storeGetByIdResponse.Description != null)
+                {
+                    lenth = storeGetByIdResponse.Description.Length;
+                }
+
+
+                if (storeGetByIdResponse != null && !string.IsNullOrWhiteSpace(storeGetByIdResponse.Image))
+                    ImageList = JsonConvert.DeserializeObject<List<string>>(storeGetByIdResponse.Image);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Error");
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+        StateHasChanged();
+        Loader = false;
+
+
+    }
+
+    internal void GetByID(string id, bool value)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (value)
+            NavManager.NavigateTo($"/shop-pos-product-list-detail/{cipheredId}");
+        else
+            NavManager.NavigateTo($"/store-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    internal async Task LoadPosProductData(int pageNumber = 0)
+    {
+        Loader = true;
+        paginationRequest.PageNo = pageNumber;
+        paginationRequest.PageSize = 100;
+
+        var result = await ShopProductHelpers.PosInventoryList(pOSInventoryListRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            posInventoryResponse = JsonConvert.DeserializeObject<PosInventoryResponse>(result.data);
+
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+}

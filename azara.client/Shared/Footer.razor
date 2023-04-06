@@ -1,0 +1,269 @@
+﻿@using azara.client.Models.Chat.Response
+@using Microsoft.AspNetCore.SignalR.Client
+
+@inherits LayoutComponentBase
+
+<!-- Footer Navigation start -->
+<footer class="position-fixed bottom-0 start-0 end-0 container">
+    <ul class="nav nav-pills footer-navigation-pills nav-justified">
+        <li class="nav-item">
+            <a class="nav-link" href="index" id="index">
+                <img src="images/home-footer.svg" class="img-fluid" alt="Home">
+                <span>home</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="shop" id="shop">
+                <img src="images/shop-footer.svg" class="img-fluid" alt="Shop">
+                <span>Shop</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="store" id="store">
+                <img src="images/store-footer.svg" class="img-fluid" alt="Store">
+                <span>My Store</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" @onclick="CountZero" href="chat" id="chat">
+                <img src="images/msg-footer.svg" class="img-fluid" alt="Message">
+                <span>Message</span>
+                @if (ChatCount > 0)
+                {
+                    <span class="position-absolute badge rounded-pill">@ChatCount</span>
+                }
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="profile" id="profile">
+                <img src="images/profile-footer.svg" class="img-fluid" alt="Profile">
+                <span>Profile</span>
+            </a>
+        </li>
+    </ul>
+</footer>
+<!-- Footer Navigation end -->
+@code {
+
+    [Parameter]
+    public EventCallback<string> PUpdate { get; set; }
+
+    ChatGetByIdResponse byIdResponse = new ChatGetByIdResponse();
+    ChatDetail chatDetails = new ChatDetail();
+    ChatReceive chatReceive = new ChatReceive();
+    ListRequest listRequest = new ListRequest();
+    BaseIdRequest request = new BaseIdRequest();
+    ChatInsertRequest chatInsert = new ChatInsertRequest();
+    int PageSize = 10, ChatCount, Zero;
+    bool Loader = true;
+    string token, userid;
+    Guid Id;
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await localStorage.GetItemAsync<string>("token");
+        Id = await localStorage.GetItemAsync<Guid>("userId");
+        TokenResponse.Token = token;
+        Loader = true;
+        await StartHubConnection();
+        await LoadData();
+        await ChatReceive();
+        await ChatLoad();
+        await GetList();
+        await StatusUpdateList();
+
+        Loader = false;
+        await JsRuntime.InvokeVoidAsync("scrollDown");
+        StateHasChanged();
+    }
+
+    internal async Task ChatLoad()
+    {
+        Loader = true;
+        request.Id = Id;
+
+        string[] url = NavManager.Uri.Split('/');
+        if (url.Last() == "chat")
+        {
+            var result = await ChatHelpers.ChatbyID(request);
+            if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+            {
+                await localStorage.SetItemAsync("token", string.Empty);
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                if (result.meta.statusCode == StatusCodeConsts.Success)
+                {
+                    byIdResponse = JsonConvert.DeserializeObject<ChatGetByIdResponse>(result.data);
+
+                }
+                else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+                else
+                    await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+            }
+            StateHasChanged();
+            Loader = false;
+        }
+    }
+
+
+    internal async Task SendChat()
+    {
+        if (string.IsNullOrWhiteSpace(chatInsert.Message))
+            return;
+
+        chatInsert.UserId = Id;
+        var result = await ChatHelpers.ChatInsertApi(chatInsert);
+        if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            await ChatLoad();
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            return;
+        }
+        chatInsert.Message = string.Empty;
+        await JsRuntime.InvokeVoidAsync("scrollDown");
+    }
+
+    private HubConnection hubConnection;
+
+
+    private async Task StartHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        if (hubConnection.ConnectionId != null)
+            await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+        StateHasChanged();
+    }
+
+    private bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+
+    internal async Task ChatReceive()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("user_chat", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    var chatReceive = JsonConvert.DeserializeObject<ChatReceive>(encodedMsg);
+                    if (chatReceive != null)
+                    {
+                        if (chatReceive.Id.Equals(Id) && !string.IsNullOrWhiteSpace(chatReceive.Message))
+                            AddChatData(chatReceive.Message, chatReceive.ReceiveUnseenCount);
+
+                    }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    private async Task AddChatData(string message, int UnssenCount)
+    {
+        ChatCount++;
+        byIdResponse.chatDetails.Add(new ChatDetail
+            {
+                Created = DateTime.UtcNow,
+                IsUserMessage = false,
+                Message = message,
+                UnseenCount = UnssenCount
+            });
+        StateHasChanged();
+        await JsRuntime.InvokeVoidAsync("scrollDown");
+    }
+
+    internal async Task LoadData()
+    {
+        var result = await HomeHelpers.GetAdminMessCount();
+        if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            var data = JsonConvert.DeserializeObject<AdminMessCountResponse>(result.data);
+            if (data != null)
+                ChatCount = data.UnReadMessCount;
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+    }
+
+    internal async Task CountZero()
+    {
+        ChatCount = 0;
+    }
+
+    internal async Task UpdateProduct()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("product_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await JsRuntime.InvokeVoidAsync("pupdate", DotNetObjectReference.Create(this));
+
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+
+    internal async Task GetList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("event_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await JsRuntime.InvokeVoidAsync("eventupdate", DotNetObjectReference.Create(this));
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    private async Task StatusUpdateList()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("event_status_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await JsRuntime.InvokeVoidAsync("eventstatusupdate", DotNetObjectReference.Create(this));
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+}

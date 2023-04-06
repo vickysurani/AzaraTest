@@ -1,0 +1,270 @@
+﻿@page "/store/insert"
+@page "/store/update/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Store.Request
+@using azara.admin.Models.Store.Response
+@using azara.admin.Helpers
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.StoreTitle</PageTitle>
+@*
+//@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{*@
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title justify-content-center align-item-center">
+            <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Store : " : "Add Store")</h2>
+            @if (!string.IsNullOrWhiteSpace(Id))
+            {
+                <h4 class="ms-1">@Title</h4>
+            }
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<div class="data-table-area">
+    <EditForm class="form-details m-t-15" Model="storeInsertUpdateRequest" OnValidSubmit="AddUpdateData">
+        <div class="filter-area justify-end align-item-center">
+            <div class="add-btn">
+                <a href="/store" class="cancel-btn">Cancel</a>
+                <input type="submit" value="Submit" />
+            </div>
+        </div>
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Store Name</label>
+                    <InputText type="text" class="form-control without-ic" placeholder="Enter store name" @bind-Value=storeInsertUpdateRequest.Name aria-describedby="storenamelabel" aria-label="Store Name" />
+                    <ValidationMessage For="@(() => storeInsertUpdateRequest.Name)" />
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <InputText type="text" class="form-control without-ic" placeholder="Enter contact number"
+                               rows="12" @bind-Value=storeInsertUpdateRequest.ContactNumber aria-describedby="contactnumberlabel" aria-label="Contact Number" onkeypress="return ((event.charCode >= 48 && event.charCode <= 57) || event.charCode == 13 || event.charCode == 190)" maxlength="10" />
+                    <ValidationMessage For="@(() => storeInsertUpdateRequest.ContactNumber)" />
+                </div>
+                <div class="form-group">
+                    <label>EmailId</label>
+                    <InputText class="form-control without-ic" placeholder="Enter email Id" @bind-Value=storeInsertUpdateRequest.EmailId aria-describedby="emailidlabel" aria-label="Email Id" />
+                    <ValidationMessage For="@(() => storeInsertUpdateRequest.EmailId)" />
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <InputTextArea type="text" class="form-control without-ic" placeholder="Enter Address" @bind-Value=storeInsertUpdateRequest.Address aria-describedby="addresslabel" aria-label="Store Address" />
+                    <ValidationMessage For="@(() => storeInsertUpdateRequest.Address)" />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <InputTextArea type="text" class="form-control without-ic" placeholder="Enter Description" @bind-Value=storeInsertUpdateRequest.Description aria-describedby="descriptionlabel" aria-label="Store Description" />
+                    <ValidationMessage For="@(() => storeInsertUpdateRequest.Description)" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Store Image</label>
+                <div id="file-upload-form">
+                    <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" OnChange="HandleImageUpload" multiple />
+                    <label for="file-upload" id="file-drag">
+                        <div id="start">
+                            <a id="file-upload-btn" class="btn">CHoose a file</a> (Please select an image upto max. 2GB)
+                        </div>
+                        <div class="row gx-15">
+                            @if (storeInsertUpdateRequest.ImageList != null && storeInsertUpdateRequest.ImageList.Count > 0)
+                            {
+                                int serial = 1;
+                                foreach (var image in storeInsertUpdateRequest.ImageList)
+                                {
+                                    <div class="col-12 col-md-6 col-xl-4 my-2">
+                                        <div class="room-image" style="background: url('@image') 50% 50%; ">
+                                            <span class="room-image-title">@serial</span>
+                                        </div>
+                                        <button type="button" class="file-close-btn" @onclick="(() => DeleteImage(image))">
+                                            <i class="fa fa-times" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    serial++;
+                                }
+                            }
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+@*}*@
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    StoreInsertUpdateRequest storeInsertUpdateRequest = new StoreInsertUpdateRequest();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            storeInsertUpdateRequest.Id = Id;
+            Loader = false;
+            var result = await StoreHelpers.StoreGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                storeInsertUpdateRequest = JsonConvert.DeserializeObject<StoreInsertUpdateRequest>(result.data);
+                if (storeInsertUpdateRequest.Image != null)
+                {
+                    storeInsertUpdateRequest.ImageList = JsonConvert.DeserializeObject<List<string>>(storeInsertUpdateRequest.Image);
+                    Title = storeInsertUpdateRequest.Name;
+                }
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Store not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something went wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New Store";
+            storeInsertUpdateRequest = new StoreInsertUpdateRequest();
+        }
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+        storeInsertUpdateRequest.Id = Id;
+        var result = await StoreHelpers.StoreAddUpdateApi(storeInsertUpdateRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.SetItemAsync("token", "");
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(storeInsertUpdateRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Store Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Store Insert Successfully!");
+                }
+                NavManager.NavigateTo("/store");
+            }
+            else if (result.meta.statusCode == 500)
+            {
+                if (result.meta.message[0].Equals("Please enter valid location"))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please enter valid location!");
+                }
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = storeInsertUpdateRequest.ImageList != null && storeInsertUpdateRequest.ImageList.Any() ? storeInsertUpdateRequest.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Product, OldFileName = storeInsertUpdateRequest.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                }
+                            }
+                            storeInsertUpdateRequest.ImageList = imageList;
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage(string image)
+    {
+        string a = new CommonHelpers(FileUpload).DeleteImage(image);
+        storeInsertUpdateRequest.ImageList.Remove(image);
+    }
+}

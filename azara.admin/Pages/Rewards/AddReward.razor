@@ -1,0 +1,191 @@
+﻿@page "/addreward"
+@using azara.admin.Models.Coupons.Response
+@using azara.admin.Models.Rewards.Response
+@using azara.admin.Models.Shared
+
+<PageTitle>@AdminTitleModel.RewardTitle</PageTitle>
+
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title justify-content-center align-item-center">
+            <h2 class="d-lg-block d-none">Add Reward from CSV</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<div class="data-table-area">
+    <EditForm class="form-details m-t-15" Model="couponsInsertUpdateRequest">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group d-flex mb-0">
+                    <div class="add-btn">
+                        <InputFile OnChange="@OnInputFileChange" class="file-upload-file csv-upload" accept=".csv" id="csvfile" />
+                        <label for="csvfile" class="ml-2 mt-1 mb-0">Import .CSV file</label>
+                    </div>
+                    <div class="add-btn">
+                        <a class="cancel-btn" @onclick="Clear">Cancel</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="filter-area justify-end align-item-center w-100">
+                    <div class="add-btn">
+                        <a href="/rewards" class="cancel-btn">Cancel</a>
+                        <input type="submit" @onclick="SubmitCSV" value="Submit" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+    <div class="data-table-area">
+
+        <div class="data-table">
+            <table id="table-1" class="table product-custom-table store-cate-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Reward CouponTitle</th>
+                        <th>Reward Code</th>
+                        <th>Reward Point</th>
+                        <th>Reward BarCode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (data.Details != null && data.Details.Any())
+                    {
+                        int srNum = 1;
+                        @foreach (var reward in data.Details)
+                        {
+                            @if (@reward.Barcode != null)
+                            {
+                                <tr>
+                                    <td>@reward.Name</td>
+                                    <td>@reward.Barcode</td>
+                                    <td>@reward.RewardsPoint</td>
+                                    <td>
+                                        <SfBarcodeGenerator @ref="BarcodeInst" Value="@reward.Barcode"
+                                                Type="BarcodeType.Code128"
+                                                Height="100px"
+                                                Width="200px"
+                                                ForeColor="Black">
+                                            <BarcodeGeneratorDisplayText Text="@reward.Barcode"></BarcodeGeneratorDisplayText>
+                                        </SfBarcodeGenerator>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center text-danger" colspan=8><h4>No Data Found</h4></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@code {
+    CouponsInsertUpdateRequest couponsInsertUpdateRequest = new CouponsInsertUpdateRequest();
+    CouponsListResponse couponsListResponse = new CouponsListResponse();
+    BaseFileUploadRequest fileUploadRequest = new BaseFileUploadRequest();
+    IBrowserFile singleFile;
+
+    CSVdata data = new CSVdata();
+
+
+
+    public PagingParameter pagingParameter { get; set; } = new PagingParameter();
+    SfBarcodeGenerator BarcodeInst;
+
+    bool Loader = true, IsDeleted = false, IsShowTable = false;
+    int PageSize = 10;
+    string token;
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+    public async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        singleFile = e.File;
+        BaseFileUploadRequest fileUploadRequest = new BaseFileUploadRequest()
+            {
+                File = singleFile,
+                FileName = singleFile.Name
+            };
+        //fileUploadRequest.File = singleFile;
+        //fileUploadRequest.FileName = singleFile.Name;
+
+        var res = await RewardHelpers.RewardCSVDataUpload(fileUploadRequest, token);
+        if (res.meta.statusCode == 401)
+        {
+            await JsRuntime.InvokeVoidAsync("OpenModal", "session-model");
+        }
+        else if (res.meta.statusCode == 409)
+        {
+            await JsRuntime.InvokeVoidAsync("OpenDuplicateSessionModal", "duplicatesession-model");
+        }
+        else if (res.meta.statusCode == 200)
+        {
+            data = JsonConvert.DeserializeObject<CSVdata>(res.data);
+        }
+    }
+
+    public async Task Clear()
+    {
+        fileUploadRequest = new BaseFileUploadRequest();
+        NavManager.NavigateTo("/rewards");
+        NavManager.NavigateTo("/addreward");
+    }
+
+
+    internal async Task SubmitCSV()
+    {
+        Loader = true;
+        var result = await RewardHelpers.RewardCSVAddApi(data);
+
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(couponsInsertUpdateRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{result.meta.message}");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{result.meta.message}");
+                }
+                NavManager.NavigateTo("/rewards");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            return;
+        }
+    }
+}

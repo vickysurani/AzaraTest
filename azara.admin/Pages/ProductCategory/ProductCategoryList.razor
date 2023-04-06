@@ -1,0 +1,331 @@
+﻿@page "/product_category"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Poscategory.Response;
+@using azara.admin.Models.ProductCategory.Response
+@using azara.admin.Models.ProductSubCategory.Response
+@using azara.admin.Models.Shared
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.ProductCategoryTitle</PageTitle>
+
+<!--******************* Middle Section Start ******************-->
+<div class="custom-section-wrap">
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title">
+            <h2 class="d-lg-block d-none">Manage Product Category</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+        <AdminProfile></AdminProfile>
+    </div>
+</div>
+<h2 class="d-lg-none d-block mt-3">Manage Product Category</h2>
+<div class="data-table-area">
+    <div class="filter-area align-item-center">
+
+        <div class="head-topbar-search">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <input type="text" class="form-custom" placeholder="Search" @bind-value="listRequest.SearchParam" />
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="SearchData">Search</a>
+            </div>
+        </div>
+        <div class="justify-end flex-column flex-md-row ml-1">
+
+            <div class="add-btn">
+                <a class="text-white cursor-pointer m-0" @onclick="Clear">Clear</a>
+            </div>
+        </div>
+
+        @*  <div class="justify-end flex-column flex-md-row ml-auto mr-0">
+
+        <div class="add-btn">
+        <a href="/product_sub_category/insert">Add Product Sub Category</a>
+        </div>
+        </div>*@
+    </div>
+    <CountDropdown ParentPagingSizeParameter="@pagingParameter.PageSize" ChangePageSize="ChangePageSize"></CountDropdown>
+
+    <div class="data-table">
+        <table id="table-1" class="table product-custom-table store-cate-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th scope="col">Sr No</th>
+                    <th>Image</th>
+                    <th @onclick="@(() => SortBy("name"))">
+                        Category
+                        <i class="fa fa-sort"></i>
+                    </th>
+                    @*<th>DepartmentName</th>*@
+                    <th>Category Code</th>
+                    @if (!IsDeleted)
+                    {
+                        <th scope="col">Status</th>
+                    }
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (posCategoryListResponse.details != null && posCategoryListResponse.details.Any())
+                {
+                    int srNum = 1;
+                    @foreach (var poscategory in posCategoryListResponse.details)
+                    {
+                        <tr>
+                            <th scope="row">@poscategory.srno</th>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(poscategory.image))
+                                {
+                                    <img src="@poscategory.image" class="imageThumbnail" />
+                                }
+                                else
+                                {
+                                    <p>No Image</p>
+                                }
+                            </td>
+                            <td>@poscategory.departmentName</td>
+                            <td>@poscategory.departmentCode</td>
+                            @if (!IsDeleted)
+                            {
+                                <td class="access-req">
+                                    <div class="switch-icon">
+                                        <label class="switch">
+                                            <input type="checkbox" id="tableActiveInactiveId-@srNum" checked="@poscategory.IsActive" @onchange="((e) => StatusUpdate(poscategory,(bool) e.Value, srNum))">
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                            }
+                            <td>
+                                <div class="view-btn">
+                                    <NavLink @onclick='e => UpdateByID(poscategory.listId.ToString(), "view")'><img src="images/eye-ic.png" alt="eye-ic" /></NavLink>
+                                </div>
+                                <div class="view-btn edit-btn">
+                                    <NavLink @onclick='e => UpdateByID(poscategory.listId.ToString(), "edit")'><img src="images/edit-ic.png" alt="edit-ic" /></NavLink>
+                                </div>
+                            </td>
+                        </tr>
+                        srNum++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td class="text-center text-danger" colspan=7><h4>No Data Found</h4></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <Pagination ParentpagingParameter="pagingParameter" PageNumber="pagingParameter.PageNumber" SetPageChanged="SetPage"></Pagination>
+    </div>
+    <p>
+        @($"Showing {pagingParameter.FirstItemNumber} - {pagingParameter.LastItemNumber} of {pagingParameter.TotalCount}")
+    </p>
+</div>
+
+
+@if (Loader == true)
+{
+    <Loader></Loader>
+}
+
+
+@code {
+
+    protected string DeleteProductSubCategoryId { get; set; }
+    protected string DeleteProductSubCategoryItem { get; set; }
+    //ProductSubCategoryListResponse productSubCategoryListResponse = new ProductSubCategoryListResponse();
+    BaseStatusUpdateRequest statusUpdateRequest = new BaseStatusUpdateRequest();
+    BaseStringStatusUpdateRequest baseStringStatusUpdateRequest = new BaseStringStatusUpdateRequest();
+    ProductSubCategoryListData productCategoryListData = new ProductSubCategoryListData();
+    ListRequest listRequest = new ListRequest();
+    PosCategoryListResponse posCategoryListResponse = new PosCategoryListResponse();
+    public PagingParameter pagingParameter { get; set; } = new PagingParameter();
+    int PageSize = 10;
+    bool Loader = true, IsDeleted = false, IsShowTable = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id, string value = null)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            if (value.Equals("view"))
+                NavManager.NavigateTo($"/product_category/view/{cipheredId}");
+            if (value.Equals("edit"))
+                NavManager.NavigateTo($"/product_category/update/{cipheredId}");
+        }
+        else
+        {
+            DeleteProductSubCategoryId = id;
+        }
+
+        StateHasChanged();
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = pagingParameter.PageSize = PageSize;
+        IsDeleted = listRequest.IsDeleted;
+
+        var result = await PosCategoryHelpers.PosCategoryListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            posCategoryListResponse = JsonConvert.DeserializeObject<PosCategoryListResponse>(result.data);
+
+            int i = 1;
+            posCategoryListResponse.details.ForEach(x =>
+            {
+                x.srno = (PageSize * posCategoryListResponse.offSet + i);
+                i++;
+            });
+            if (posCategoryListResponse.details.Count != 0)
+            {
+                pagingParameter.TotalCount = posCategoryListResponse.total;
+                pagingParameter.TotalPage = (int)Math.Ceiling((decimal)pagingParameter.TotalCount / PageSize);
+                pagingParameter.PageNumber = posCategoryListResponse.offSet + 1;
+                pagingParameter.CurrentPageNumber = pagingParameter.PageNumber;
+                pagingParameter.FirstItemNumber = (PageSize * pagingParameter.PageNumber) - (PageSize - 1);
+                pagingParameter.LastItemNumber = (pagingParameter.CurrentPageNumber == pagingParameter.TotalPage) ? pagingParameter.TotalCount : PageSize * pagingParameter.PageNumber;
+                pagingParameter.ShowFooter = true;
+                pagingParameter.ShowPageNumber = true;
+            }
+            else
+            {
+                pagingParameter.ShowFooter = false;
+                pagingParameter.ShowPageNumber = false;
+                pagingParameter.TotalCount = 0;
+            }
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                posCategoryListResponse = JsonConvert.DeserializeObject<PosCategoryListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+
+    internal async void SetPage(int pagenumber)
+    {
+        await LoadData(pagenumber - 1);
+    }
+
+    #region Change Page Size
+    public async void ChangePageSize(int pageSize)
+    {
+        PageSize = pageSize;
+        pagingParameter.PageSize = pageSize;
+        await LoadData();
+    }
+    #endregion
+
+
+    private async void SearchData()
+    {
+        Loader = true;
+        listRequest.SearchParam = (listRequest.SearchParam ?? string.Empty).Trim();
+
+        await LoadData();
+
+        Loader = false;
+        StateHasChanged();
+    }
+
+    public async void Clear()
+    {
+        listRequest.SearchParam = string.Empty;
+        listRequest = new ListRequest();
+        await LoadData();
+
+    }
+
+    public async void SortBy(string sortBy)
+    {
+        if (!String.IsNullOrEmpty(listRequest.SortBy))
+        {
+            string[] search = listRequest.SortBy.Split('_');
+            if (sortBy.Equals(search.First()))
+                listRequest.SortBy = listRequest.SortBy.Contains("desc") ? listRequest.SortBy.Replace("desc", "asc") : listRequest.SortBy.Replace("asc", "desc");
+            else
+                listRequest.SortBy = $"{sortBy}_asc";
+        }
+        else
+            listRequest.SortBy = $"{sortBy}_asc";
+
+        await LoadData();
+    }
+
+    internal async Task StatusUpdate(PosCategoryData posCategoryData, bool isApproved, int srNum)
+    {
+        baseStringStatusUpdateRequest.Id = new(posCategoryData.listId);
+        baseStringStatusUpdateRequest.Active = isApproved;
+
+        var result = await ProductSubCategoryHelpers.POSSubcategoryStatusUpdate(baseStringStatusUpdateRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                if (isApproved)
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{posCategoryData.departmentName} is now active.");
+                else
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", $"{posCategoryData.departmentName} is now inactive.");
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("Warning");
+                await JsRuntime.InvokeVoidAsync("BaseActiveInactive", "tableActiveInactiveId-" + srNum.ToString(), posCategoryData/*.active*/);
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+    }
+
+}
+

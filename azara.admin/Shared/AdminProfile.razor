@@ -1,0 +1,105 @@
+﻿@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Account.Response
+
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+
+
+<div class="profile-menu">
+    <div class="profile-dropdown">
+        <div class="align-item-center justify-content-between" @onclick="OpenProfileDropDown">
+            <div class="d-flex align-items-center">
+                <div class="profile-img" style="background: url('images/profile-img.png') no-repeat;"></div>
+                <div class="user-nm">@AdminName</div>
+            </div>
+            <div class="dropdown-arrow">
+                <a><i class="fa fa-caret-down" aria-hidden="true"></i></a>
+            </div>
+        </div>
+        <div class="profile-menu-item">
+            <ul>
+                <li><a href="admin-details">My Profile</a></li>
+                <li><a href="change-password">Change Password</a></li>
+                <li class="red-clr btn" @onclick="Logout">Logout</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private string AdminName { get; set; } = "Profile";
+    private bool Loader { get; set; }
+
+    AdminDetailsResponse adminDetailsResponse = new AdminDetailsResponse();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var result = await AccountHelper.GetProfilApi();
+            if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+            {
+                NavManager.NavigateTo("/");
+            }
+            else
+            {
+                if (result.meta.statusCode == StatusCodeConsts.Success)
+                {
+                    adminDetailsResponse = JsonConvert.DeserializeObject<AdminDetailsResponse>(result.data);
+                    if (adminDetailsResponse != null)
+                    {
+                        AdminName = adminDetailsResponse.Name;
+                    }
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                    return;
+                }
+            }
+            StateHasChanged();
+            Loader = false;
+
+        }
+    }
+
+    private async Task OpenProfileDropDown()
+    {
+        await JsRuntime.InvokeVoidAsync("openProfileDropDown");
+    }
+
+    public async Task Logout()
+    {
+        Loader = true;
+        var AdminId = await localStorage.GetItemAsync<string>("adminId");
+        var UniqueId = await localStorage.GetItemAsync<string>("uniqueId");
+        var result = await AccountHelper.LogoutApi();
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            //await localStorage.ClearAsync();
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Successfully logout!");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", $"{result.meta.message[0]}");
+                //NavManager.NavigateTo("/");
+            }
+        }
+        StateHasChanged();
+        Loader = false;
+
+    }
+}

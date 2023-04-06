@@ -1,0 +1,119 @@
+﻿@page "/about-us"
+@using azara.client.Models.AboutUs;
+
+@layout LoginLayout
+@inject IJSRuntime JsRuntime
+<PageTitle>@ClientTitleModel.AboutUsTitle</PageTitle>
+
+
+@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <!-- Circle animation img start -->
+            <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+            <!-- Circle animation img end -->
+            <!-- Azara logo start -->
+            <div class="center-logo">
+                <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+            </div>
+            <!-- Azara logo end -->
+        </div>
+    </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <!--******************* Middle Section Start ******************-->
+    <main>
+        <!-- Top Back Panel start -->
+        <div class="position-fixed top-0 start-0 end-0 container">
+            <div class="back-panel d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-start">
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                    <h1>About Us</h1>
+                </div>
+            </div>
+        </div>
+        <!-- Top Back Panel end -->
+        <!-- About Us start -->
+        <section class="common-padding position-relative xs-padding">
+            <div class="container">
+                <div class="row">
+                    @if (data.Description != null)
+                    {
+                       
+                                <div class="col-12 mx-auto">
+                                    <div class="about-us-content">
+                                        <div class="about-img">
+                                            <img src='@(!string.IsNullOrWhiteSpace(data.Image) ? data.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="About Us">
+                                        </div>
+                                        <ul>
+
+                                    <li>@aboutusDescription</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            
+                    }
+                    <!-- col -->
+                </div>
+                <!-- row -->
+            </div>
+        </section>
+        <!-- About Us end -->
+    </main>
+    <!--******************* Middle Section End ******************-->
+}
+@code {
+
+    #region Declrations
+    bool Loader = true;
+    #endregion
+    AboutUsData aboutusdata = new AboutUsData();
+    AboutUsDataResponse data = new AboutUsDataResponse();
+    AboutUsGetRequest request = new AboutUsGetRequest();
+    MarkupString aboutusDescription => (MarkupString)data.Description;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("Remove");
+        Loader = false;
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        var result = await CommonHelpers.AboutUsList(request);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            data = JsonConvert.DeserializeObject<AboutUsDataResponse>(result.data);
+
+            int i = 1;
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                data = JsonConvert.DeserializeObject<AboutUsDataResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+}

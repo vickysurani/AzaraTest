@@ -1,0 +1,277 @@
+﻿@page "/edit-profile"
+
+<PageTitle>@ClientTitleModel.ProfileTitle</PageTitle>
+
+<!-- Top Back Panel start -->
+<div class="position-fixed top-0 start-0 end-0 container">
+    <div class="back-panel d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center justify-content-start">
+            <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+            <h1>Edit Profile</h1>
+        </div>
+    </div>
+</div>
+<!-- Top Back Panel end -->
+<!-- Edit Profile start -->
+<section class="login-details common-padding position-relative overflow-x-hidden min-vh-100 justify-content-start xs-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-md-9 col-lg-8 mx-auto">
+                <EditForm class="form-details" Model="profileUpdateRequestResponse" OnValidSubmit="UpdateAdminProfile">
+                    <div class="edit-profile-img position-relative">
+                        <button class="file-upload">
+                            <InputFile type="file" id="profile-type" class="file-input" OnChange="HandlePhotoSelected" /><img src="images/camera-icon.svg" class="img-fluid" alt="Camera">
+                        </button>
+                        <div class="imageWrapper">
+                            <img src="@profileUpdateRequestResponse.Image" id="profiletype" class="img-fluid editimage" alt="Profile">
+                        </div>
+                    </div>
+                    <div class="row mt-5">
+                        <div class="form-group col-12 col-lg-6">
+                            <label for="fname" class="form-label">First Name</label>
+                            <InputText type="text" @bind-Value=profileUpdateRequestResponse.FirstName class="form-control" id="fname" placeholder="Enter First Name" />
+                            <ValidationMessage For="@(() => profileUpdateRequestResponse.FirstName)" />
+                        </div>
+                        <!-- col -->
+                        <div class="form-group col-12 col-lg-6">
+                            <label for="email" class="form-label">Email Address</label>
+                            <InputText type="email" @bind-Value=profileUpdateRequestResponse.EmailId class="form-control" id="email" placeholder="Enter Email Address" />
+                            <ValidationMessage For="@(() => profileUpdateRequestResponse.EmailId)" />
+                        </div>
+                        <!-- col -->
+                        <div class="form-group col-12 col-lg-6">
+                            <label for="lname" class="form-label">Last Name</label>
+                            <InputText type="text" @bind-Value=profileUpdateRequestResponse.LastName class="form-control" id="lname" placeholder="Enter Last Name" />
+                            <ValidationMessage For="@(() => profileUpdateRequestResponse.LastName)" />
+                        </div>
+                        <!-- col -->
+                        <div class="form-group col-12 col-lg-6 pb-3">
+                            <label for="mobile" class="form-label">Mobile Number</label>
+                            <InputText type="tel" @bind-Value=profileUpdateRequestResponse.MobileNumber class="form-control" id="mobile" placeholder="Enter Mobile Number" />
+                            <ValidationMessage For="@(() => profileUpdateRequestResponse.MobileNumber)" />
+                        </div>
+                        <!-- col -->
+                        <div class="col-12 col-lg-6">
+                            <button type="submit" class="btn btn-common">save<span></span></button>
+                        </div>
+                        <!-- col -->
+                    </div>
+                    <!-- row -->
+                    <!-- col -->
+                </EditForm>
+            </div>
+            <!-- row -->
+        </div>
+    </div>
+
+    <!-- background Circle Shape start -->
+    <img src="images/bg-half-circle.svg" class="img-fluid bg-left-circle position-absolute bottom-0 start-0" alt="Circle">
+    <img src="images/bg-half-circle.svg" class="img-fluid bg-right-circle position-absolute bottom-0 end-0" alt="Circle">
+    <!-- background Circle Shape end -->
+</section>
+<!-- Edit Profile end -->
+@code {
+
+    private bool Loader { get; set; } = false;
+    string imageURL = "img/photos/icon-upload.png", DisplayImageNone = "display-none";
+    bool IsUpdate = false, ImgFlag = false, IsModelShow = false;
+    int i;
+
+    SignUpRequest profileUpdateRequestResponse = new SignUpRequest();
+    ImageProfileUpdateRequest imageProfileUpdateRequest = new ImageProfileUpdateRequest();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            TokenResponse.Token = token;
+            if (token != null)
+            {
+                await LoadData();
+                imageURL = profileUpdateRequestResponse.Image;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/sign-in");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        var result = await AccountHelpers.GetProfilApi();
+        if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            profileUpdateRequestResponse = JsonConvert.DeserializeObject<SignUpRequest>(result.data);
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "User not found");
+            return;
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+            return;
+        }
+        Loader = false;
+    }
+
+    internal async Task UpdateAdminProfile()
+    {
+        Loader = true;
+        //baseImageUpload.FileName = insertUpdateRequest.Name.Replace(" ", "_").ToLower();
+        //var imageResponse = await ProductHelpers.UploadProductImage(baseImageUpload);
+        profileUpdateRequestResponse.Id = profileUpdateRequestResponse.Id;
+        //imageProfileUpdateRequest.FileName = profileUpdateRequestResponse.ImageUpload + "_" + i++;
+        //if (ImgFlag)
+        //{
+        //    var res = await AccountHelpers.ProfileImageUpload(imageProfileUpdateRequest);
+        //    ImageResponse imgUrl = JsonConvert.DeserializeObject<ImageResponse>(res);
+        //    profileUpdateRequestResponse.Image = imageProfileUpdateRequest.File.Name;
+        //}
+        var result = await AccountHelpers.Profileupdate(profileUpdateRequestResponse);
+
+        if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Successfully Profile Updated!");
+            NavManager.NavigateTo("/profile-details");
+        }
+        else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            Loader = false;
+            if (result.meta.message[0].Contains("error_account_not_found"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Bad request, try again!");
+                NavManager.NavigateTo("/profile-details");
+            }
+            else if (result.meta.message[0].Contains("error_otp_expired"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Token is expired");
+                NavManager.NavigateTo("/profile-details");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            return;
+        }
+        Loader = false;
+    }
+
+    public class Files
+    {
+        public string Name { get; set; }
+    }
+    public List<Files> files = new List<Files>();
+    private int maxAllowedFiles = 1;
+
+    int imageCount = 12;
+    private async Task HandlePhotoSelected(InputFileChangeEventArgs e)
+    {
+
+        try
+        {
+            var images = profileUpdateRequestResponse.ImageList != null && profileUpdateRequestResponse.ImageList.Any() ? profileUpdateRequestResponse.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Profile, OldFileName = profileUpdateRequestResponse.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    profileUpdateRequestResponse.Image = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+
+    private async Task OnFocusChange(FocusEventArgs args, string controlId)
+    {
+        if (!IsUpdate)
+        {
+            await JsRuntime.InvokeVoidAsync("ClearControlValueOnFocus", controlId);
+        }
+    }
+
+    internal async void Show(SignUpRequest edit, bool isUpdate)
+    {
+        await JsRuntime.InvokeVoidAsync("OpenModal", "show-model");
+        await JsRuntime.InvokeVoidAsync("ScrollOn");
+        if (isUpdate)
+        {
+            profileUpdateRequestResponse.FirstName = edit.FirstName;
+            profileUpdateRequestResponse.Sequence = edit.Sequence;
+            profileUpdateRequestResponse.Id = edit.Id;
+            if (edit.ImageUrl != null)
+            {
+                string[] profileimg = edit.ImageUrl.Split("/");
+                profileUpdateRequestResponse.ImageUrl = profileimg[4];
+                DisplayImageNone = null;
+            }
+            imageURL = edit.ImageUrl;
+            IsUpdate = true;
+        }
+        else
+        {
+            IsUpdate = false;
+            DisplayImageNone = "display-none";
+            imageURL = "img/photos/icon-upload.png";
+            profileUpdateRequestResponse.FirstName = "";
+            profileUpdateRequestResponse.Sequence = 0;
+            profileUpdateRequestResponse.Id = null;
+            profileUpdateRequestResponse.ImageUrl = "";
+        }
+        StateHasChanged();
+        IsModelShow = true;
+    }
+}

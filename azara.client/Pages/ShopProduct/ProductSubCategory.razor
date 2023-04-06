@@ -1,0 +1,238 @@
+﻿@page "/product-sub-category/{Id}"
+@using azara.client.Models.POSSubCategory;
+@using azara.client.Models.POSSubCategory.Response;
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.ShopProductTitle</PageTitle>
+
+@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <!-- Circle animation img start -->
+            <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+            <!-- Circle animation img end -->
+            <!-- Azara logo start -->
+            <div class="center-logo">
+                <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+            </div>
+            <!-- Azara logo end -->
+        </div>
+    </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <main>
+        <!-- Top Back Panel start -->
+        <div class="position-fixed top-0 start-0 end-0 container">
+            <div class="back-panel d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-start">
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                    <h1>Product sub Category</h1>
+                </div>
+            </div>
+        </div>
+        <!-- Top Back Panel end -->
+        <!--******************* Middle Section Start ******************-->
+        <!-- Featured Products start -->
+
+        <section class="common-padding featured-product-details position-relative xs-padding">
+            <div class="categories-section position-relative lg-margin">
+                @if (@pOSSubCategoryByIdResponse.Details != null && @pOSSubCategoryByIdResponse.Details.Count != 0)
+                {
+                    @*@if (@pOSSubCategoryByIdResponse.Details.Count != 0)*@
+                    @*{*@
+                    <div class="container">
+                        <div class="swiper categorySwiper">
+                            <div class="swiper-wrapper">
+
+                                @foreach (var category in pOSSubCategoryByIdResponse.Details)
+                                {
+                                    <div class="swiper-slide">
+                                        @*....*@
+                                        <a class="card" @onclick="e => SubCategoryGetByID(category.Name)">
+                                            <div class="card-img">
+                                                @*<img src="@category.Image" class="img-fluid" alt="Category">*@
+                                                 <img src='@(!string.IsNullOrWhiteSpace(category.Image) ? category.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                            </div>
+                                            <h4>@category.Name</h4>
+                                        </a>
+                                    </div>
+                                }
+
+                            </div>
+                            <div class="swiper-button-next"></div>
+                            <div class="swiper-button-prev"></div>
+                            @* <div class="swiper-button-next" tabindex="0" role="button" aria-label="Next slide" aria-controls="swiper-wrapper-103918e14418a1f7e" aria-disabled="false"></div>
+                    <div class="swiper-button-prev" tabindex="0" role="button" aria-label="Previous slide" aria-controls="swiper-wrapper-103918e14418a1f7e" aria-disabled="false"></div>
+                    <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>*@
+                        </div>
+                    </div>
+                    @*}*@
+                }
+                else
+                {
+                    <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-center">
+                        <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                            <div class="no-data-found text-center">
+                                <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                <h2>Oppps...</h2>
+                                <h4>Product Sub Cetegory Not Found please try again</h4>
+                            </div>
+                        </section>
+                    </div>
+                }
+            </div>
+        </section>
+        <!-- Featured Products end -->
+        <!-- Featured Products end -->
+
+
+    </main>
+}
+
+@*@if (Loader == true)
+{
+    @*<Loader></Loader> } *@
+
+<!--  Shop Filter Modal end -->
+@code {
+
+    int lenth;
+    bool Loader = true;
+    [Parameter]
+    public string Id { get; set; }
+
+    ProductSubCategoryListResponse response = new ProductSubCategoryListResponse();
+    PosCategoryData posCategoryData = new PosCategoryData();
+    POSSubCategoryByIdResponse pOSSubCategoryByIdResponse = new POSSubCategoryByIdResponse();
+    POSInventoryDistinctSubCategoryList request = new POSInventoryDistinctSubCategoryList();
+    //DepartmentGetByIdResponse request = new DepartmentGetByIdResponse();
+    //PosCategoryByIdRequest request = new PosCategoryByIdRequest();
+    //POSCategoryByIdRequest request = new POSCategoryByIdRequest();
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await JsRuntime.InvokeVoidAsync("categorySwiper", null);
+        var token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        if (token == null)
+        {
+            NavManager.NavigateTo("/index");
+        }
+        else
+        {
+            Loader = true;
+            Id = GenericHelper.Decipher(Id, 3);
+            await SubCategorybyID();
+            await UpdatePOSSubCategory();
+            await UpdatePOSCategoryStatus();
+            await JsRuntime.InvokeVoidAsync("categorySwiper");
+            Loader = false;
+            StateHasChanged();
+
+        }
+    }
+
+
+    internal void SubCategoryGetByID(string name)
+    {
+        //int key = 3;
+        //var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"POSProduct_By_ID/{name}");
+        StateHasChanged();
+    }
+    internal async Task SubCategorybyID()
+    {
+        Loader = true;
+        request.DepartmentListID = Id;
+        var result = await ShopProductHelpers.ProductSubCategorybyID(request);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                pOSSubCategoryByIdResponse = JsonConvert.DeserializeObject<POSSubCategoryByIdResponse>(result.data);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Error");
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+        StateHasChanged();
+
+    }
+
+    internal async Task ProductList(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/shop-product-list/{cipheredId}");
+        StateHasChanged();
+
+    }
+
+    private HubConnection hubConnection;
+
+
+    private async Task StartHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        //if (IsConnected)
+        //    await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+        StateHasChanged();
+    }
+
+    internal async Task UpdatePOSSubCategory()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("pos_sub_category_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await SubCategorybyID();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdatePOSCategoryStatus()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("pos_sub_category_status", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await SubCategorybyID();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+}

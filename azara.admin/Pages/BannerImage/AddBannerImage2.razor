@@ -1,0 +1,282 @@
+﻿@page "/bannerimage/insert2/{Id}"
+@*@page "/bannerimage/update/{Id}"*@
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Banner.Request;
+@using azara.admin.Models.Banner.Response;
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Event.Request
+@using azara.admin.Models.Const
+@using azara.models.Requests.Banner;
+
+<PageTitle>@AdminTitleModel.BannerImage</PageTitle>
+
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Banner Image : " : "Add Banner Image")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        @*First Image*@
+        <EditForm class="form-details m-t-15" Model="bannerInsertRequest" OnValidSubmit="AddImageData1">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="/banner" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+            </div>
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    @*                  @for (int i = 1; i <= 3; i++)
+                {
+                *@                   @*   @if (ImageNum > 2)
+                ImageNum = 0;
+                *@
+                    @*int count = ++ImageNum;*@
+                    @*<label>Banner Image @count</label>*@
+                    <div id="file-upload-form" class="uploader">
+                        <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" OnChange="HandleImageUpload" />
+                        <label for="file-upload" id="file-drag">
+                            @if (!string.IsNullOrWhiteSpace(bannerInsertRequest.BannerImage2))
+                            {
+
+                                <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                    <i class="fa fa-times" aria-hidden="true"></i>
+                                </button>
+                            }
+
+                            @*
+                        @if (count == 1)
+                        {*@
+                            <img id="file-image" src="@bannerInsertRequest.BannerImage2" alt="" class="@((string.IsNullOrEmpty(bannerInsertRequest.BannerImage2)? "hidden" : ""))" @bind-Value="bannerInsertRequest.BannerImage2" @bind-Value:event="OnInput">
+                            @*}*@
+
+                            <div id="start">
+                                @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                <i class="fa fa-upload" aria-hidden="true"></i>
+                                <div>Drag & Drop Here or </div>
+                                <div id="notimage" class="hidden">Please select an image</div>
+                                <a id="file-upload-btn" class="">CHoose a file</a>
+                                <p class="second-theme-color">max. 2GB</p>
+                            </div>
+                            <div id="response" class="hidden d-none">
+                                <div id="messages"></div>
+                                <progress class="progress" id="file-progress" value="0">
+                                    <span>0</span>%
+                                </progress>
+                            </div>
+                        </label>
+                    </div>
+                    @*}*@
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+
+
+
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    BannerImageListResponse bannerImageListResponse = new();
+    BannerImageRequest bannerImageRequest = new BannerImageRequest();
+    BannerInsertRequest bannerInsertRequest = new BannerInsertRequest();
+    BaseIdRequest baseIdRequest = new BaseIdRequest();
+    ListRequest listRequest = new ListRequest();
+    BlazoredTextEditor QuillHtml { get; set; } = new BlazoredTextEditor();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    private DateTime MinDate { get; set; } = DateTime.UtcNow;
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    private int ImageNum { get; set; } = 0;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            bannerInsertRequest.Id = new(Id);
+            Loader = false;
+            var result = await BannerImageHelpers.BannerList(listRequest);
+            if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+            {
+                //bannerInsertRequest = JsonConvert.DeserializeObject<EventInsertUpdateRequest>(result.data);
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                bannerImageListResponse = JsonConvert.DeserializeObject<BannerImageListResponse>(result.data);
+                foreach (var img in bannerImageListResponse.details)
+                {
+                    bannerInsertRequest.BannerImage1 = img.bannerImage1;
+                    bannerInsertRequest.BannerImage2 = img.bannerImage2;
+                    bannerInsertRequest.BannerImage3 = img.bannerImage3;
+
+                }
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            }
+
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New BAnnerImage";
+            bannerInsertRequest = new BannerInsertRequest();
+        }
+        StateHasChanged();
+    }
+
+    public async Task AddImageData1()
+    {
+        Loader = true;
+
+        bannerInsertRequest.Id = Id;
+        var result = await BannerImageHelpers.BannerUpdateImage(bannerInsertRequest);
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                if (!string.IsNullOrWhiteSpace(bannerInsertRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Banner Image Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Banner Image Added Successfully!");
+                }
+                NavManager.NavigateTo("/banner");
+            }
+            else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                if (result.meta.message[0].Contains("Banner Image not found"))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Banner Image not found");
+                    if (!string.IsNullOrWhiteSpace(bannerInsertRequest.Id))
+                        NavManager.NavigateTo($"/bannerimage/insert2/{bannerInsertRequest.Id}");
+                    else
+                        NavManager.NavigateTo("/banner");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+                    return;
+                }
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = bannerInsertRequest.BannerImage2 != null && bannerInsertRequest.BannerImage2.Any();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Event, OldFileName = new List<string> { bannerInsertRequest.BannerImage2 } };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    bannerInsertRequest.BannerImage2 = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+    private async Task DeleteImage()
+    {
+        bannerInsertRequest.BannerImage2 = new CommonHelpers(FileUpload).DeleteImage(bannerInsertRequest.BannerImage2);
+    }
+}

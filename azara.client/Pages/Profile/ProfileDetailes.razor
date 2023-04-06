@@ -1,0 +1,183 @@
+﻿@page "/profile-details"
+@using azara.client.Helpers.Generic
+
+<PageTitle>@ClientTitleModel.ProfileTitle</PageTitle>
+
+<main>
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                <a href="profile" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                <h1>My Profile</h1>
+            </div>
+            <a href="edit-profile" class="top-panel-img">
+                <img src="images/edit-icon.svg" class="img-fluid" alt="Edit">
+            </a>
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!-- Profile Detail start -->
+    <section class="common-padding position-relative overflow-x-hidden min-vh-100 xs-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-md-9 col-lg-8 mx-auto">
+                    <div class="profile-wave position-relative mx-auto">
+                        <div class="account-profile-img">
+                            <!-- Image start -->
+                            <!-- <img src="images/person.jpg" class="img-fluid" alt="Profile"> -->
+                            <!-- Image end -->
+                            <!-- Icon start -->
+                            <img src='@loginResponse.Image' class="img-fluid icon" alt="Profile">
+                            <!-- Icon end -->
+                        </div>
+                        <!-- bg Circle Wave Animation start -->
+                        <div class="bg-circle-wave">
+                            <span class="wave s1"></span>
+                            <span class="wave s2"></span>
+                            <span class="wave s3"></span>
+                            <span class="wave s4"></span>
+                        </div>
+                        <!-- bg Circle Wave Animation end -->
+                    </div>
+
+                    <div class="row profile-detail">
+                        <div class="col-12 col-lg-6">
+                             <li>
+                                <span>First Name</span>@loginResponse.FirstName
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <li>
+                                <span>Last Name</span>@loginResponse.LastName
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                             <li>
+                                <span>Email Address</span>@loginResponse.EmailId
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                             <li>
+                                <span>Mobile Number</span>@loginResponse.MobileNumber
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <li>
+                                <span>Address</span>@loginResponse.Address
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <li>
+                                <span>State</span>@loginResponse.State
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <li>
+                                <span>City</span>@loginResponse.City
+                            </li>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <li>
+                                <span>Zip Code</span>@loginResponse.ZipCode
+                            </li>
+                        </div>
+                    </div>
+                   @* <ul class="profile-detail p-0">
+                        <li>
+                            <span>First Name</span>@loginResponse.FirstName
+                        </li>
+                        <li>
+                            <span>Last Name</span>@loginResponse.LastName
+                        </li>
+                        <li>
+                            <span>Email Address</span>@loginResponse.EmailId
+                        </li>
+                        <li>
+                            <span>Mobile Number</span>@loginResponse.MobileNumber
+                        </li>
+                    </ul>*@
+                    <!-- col -->
+                </div>
+                <!-- row -->
+            </div>
+        </div>
+
+        <!-- background Circle Shape start -->
+        <img src="images/bg-half-circle.svg" class="img-fluid bg-left-circle position-absolute bottom-0 start-0" alt="Circle">
+        <img src="images/bg-half-circle.svg" class="img-fluid bg-right-circle position-absolute bottom-0 end-0" alt="Circle">
+        <!-- background Circle Shape end -->
+    </section>
+    <!-- Profile Detail end -->
+</main>
+<!--******************* Middle Section End ******************-->
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+  <!-- Preloader End -->
+}
+
+
+@code {
+    LoginResponse loginResponse = new LoginResponse();
+    string token, imageUrl = "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png";
+    bool Loader = true;
+    
+
+
+    #region Initialization
+    protected override async Task OnInitializedAsync()
+    {
+        token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        if (token != null && token != string.Empty && token == TokenResponse.Token)
+        {
+            await GetProfile();
+            Loader = false;
+
+        }
+        else
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        StateHasChanged();
+    }
+    #endregion
+
+    #region Get Profile
+    internal async Task GetProfile()
+    {
+        var result = await AccountHelpers.GetProfilApi();
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                loginResponse = JsonConvert.DeserializeObject<LoginResponse>(result.data);
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        StateHasChanged();
+    }
+    #endregion
+
+}

@@ -1,0 +1,218 @@
+﻿@page "/product_category/view/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Poscategory.Request;
+@using azara.admin.Models.Poscategory.Response;
+@using azara.admin.Models.Product.Request
+@using azara.admin.Models.ProductCategory.Request
+@using azara.admin.Models.ProductSubCategory.Request
+@using azara.models.Responses.POSDepartment;
+@using azara.models.Responses.ProductCategory
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.ProductCategoryTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">View Product Category : </h2><h4 class="ms-1">@Title</h4>
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <div class="gray-bg">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a @onclick='e => UpdateByID(Id)' class="cancel-btn">Edit</a>
+                    <a href="/product_category">Cancel</a>
+                </div>
+            </div>
+            <form class="form-details m-t-15">
+                <div class="row form-details-box">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Product Category Name</label>
+                            <p>@posCategoryData.departmentName</p>
+                        </div>
+
+
+
+                        @*<div class="form-group">
+                    <label>Status</label>
+                    <label class="switch">
+                    <input class="form-control without-ic" placeholder="Enter Status"
+                    rows="12" aria-describedby="productcategorystatuslabel" checked="@productCategoryInsertUpdateRequest.Status" aria-label="Status" type="checkbox" disabled />
+                    <span class="slider round"></span>
+                    </label>
+                    </div>*@
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Product Category Image</label>
+                            <div id="file-upload-form" class="uploader">
+                                <label for="file-upload" id="file-drag">
+                                    <img src="@posCategoryData.image" id="file-image" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+    <div class="data-table-area">
+        <div class="gray-bg">
+
+            <div class="data-table">
+                <table id="table-1" class="table product-custom-table store-cate-table" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th scope="col">Sr No</th>
+                            <th @* @onclick="@(() => SortBy(" name"))"*@>
+                                Desc
+                                <i class="fa fa-sort"></i>
+                            </th>
+                            <th>DepartmentCode</th>
+                            <th>Cost</th>
+                            <th>Keywords</th>
+                            <th>QuantityOnHand</th>
+                            <th>Store 01</th>
+                            <th>Store 02</th>
+                            <th>Price 1</th>
+                            <th>Price 2</th>
+                            <th>Price 3</th>
+                            <th>Price 4</th>
+                            <th scope="col">Price 5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (@posCategoryData.DepartmentGetByIdResponse != null && @posCategoryData.DepartmentGetByIdResponse.Any())
+                        {
+                            int srNum = 1;
+                            @foreach (var poscategory in @posCategoryData.DepartmentGetByIdResponse)
+                            {
+                                <tr>
+                                    <th scope="row">@srNum</th>
+
+                                    <td>
+                                        @poscategory.Desc1
+                                    </td>
+                                    <td>@poscategory.DepartmentCode</td>
+                                    <td>@poscategory.Cost</td>
+                                    <td>@poscategory.Keyword</td>
+                                    <td>@poscategory.QuantityOnHand</td>
+                                    <td>@poscategory.OnHandStore01</td>
+                                    <td>@poscategory.OnHandStore02</td>
+                                    <td>@poscategory.Price1</td>
+                                    <td>@poscategory.Price2</td>
+                                    <td>@poscategory.Price3</td>
+                                    <td>@poscategory.Price4</td>
+                                    <td>@poscategory.Price5</td>
+                                </tr>
+                                srNum++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td class="text-center text-danger" colspan=7><h4>No Data Found</h4></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @* <Pagination ParentpagingParameter="pagingParameter" PageNumber="pagingParameter.PageNumber" SetPageChanged="SetPage"></Pagination>*@
+            </div>
+            <p>
+                @*
+            @($"Showing {pagingParameter.FirstItemNumber} - {pagingParameter.LastItemNumber} of {pagingParameter.TotalCount}")*@
+            </p>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    private string ProductCategoryName { get; set; }
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; }
+    //ProductSubCategoryInsertUpdateRequest productSubCategoryInsertUpdateRequest { get; set; } = new ProductSubCategoryInsertUpdateRequest();
+    PosCategoryData posCategoryData = new PosCategoryData();
+    DepartmentGetByIdResponse pOSInventortData = new DepartmentGetByIdResponse();
+
+    PosCategoryByIdRequest request = new PosCategoryByIdRequest();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    internal void UpdateByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/product_category/update/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            request.Id = Id;
+            Loader = false;
+            var result = await PosCategoryHelpers.PosCategoryGetById(request);
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                posCategoryData = JsonConvert.DeserializeObject<PosCategoryData>(result.data);
+                Title = posCategoryData.departmentName;
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Product Category not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Create New Product Category";
+            posCategoryData = new PosCategoryData();
+        }
+    }
+}

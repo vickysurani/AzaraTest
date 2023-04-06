@@ -1,0 +1,25 @@
+﻿@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using Syncfusion.Blazor.BarcodeGenerator
+@using azara.admin
+@using azara.admin.Shared
+@using Newtonsoft.Json
+@using azara.admin.Helpers
+@using azara.files
+@using azara.models.Constants
+@using Blazored.TextEditor
+@using azara.admin.Shared.ResourceFiles;
+@using Microsoft.AspNetCore.SignalR.Client
+
+
+@inject NavigationManager NavManager
+@inject IJSRuntime JsRuntime
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IUploadManager UploadManager
+@inject IFileUpload FileUpload

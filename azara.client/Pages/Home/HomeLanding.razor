@@ -1,0 +1,665 @@
+﻿@page "/homelanding"
+@page "/"
+
+@using System.Text.Json.Nodes
+@using azara.client.Models.Banner;
+@using azara.client.Models.Inventory.Request;
+@using azara.client.Models.POSDepartment;
+@using azara.client.Models.ProductCategory.Response
+@using azara.client.Models.Store.Response
+
+@layout HomeLandingLayout
+
+<PageTitle>@ClientTitleModel.HomeLandingTitle</PageTitle>
+
+@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <!-- Circle animation img start -->
+            <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+            <!-- Circle animation img end -->
+            <!-- Azara logo start -->
+            <div class="center-logo">
+                <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+            </div>
+            <!-- Azara logo end -->
+        </div>
+    </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <!--******************* Header Section Start *********************-->
+    <header class="position-relative sm-margin">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-3">
+                    <div class="top-bar-header d-flex align-items-center justify-content-start">
+                        <a href="#" class="bars custom-toggle-bar" @onclick="CustomToggleBar" data-bs-toggle="modal" data-bs-target="#side-navigation-menu">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </a>
+                        <!-- <h1></h1> -->
+                    </div>
+                </div>
+                <div class="col-6">
+                    <a href="homelanding" class="navbar-brand d-table mx-auto">
+                        <img src="images/azara-logo.svg" class="img-fluid" alt="Azara Logo">
+                    </a>
+                </div>
+                <div class="col-3 d-flex justify-content-end">
+                    <a href="sign-in" class="account-label d-block d-md-none">
+                        <img src="images/user-icon.svg" class="img-fluid" alt="User">
+                    </a>
+                    <div class="account-label d-none d-md-flex">
+                        @*<button class="btn-common btn-border me-2" type="submit">Sign In</button>*@
+                        <button class="btn-common btn-border border-theme" @onclick="Login" type="button">Sign up / Sign In</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!--******************* Header Section End *********************-->
+    <!--******************* Banner Section Start *********************-->
+    <main class="custom-main-section">
+        <!-- Search Panel start-->
+        @*    <section class="search-panel position-relative sm-margin">
+    <div class="container">
+    <div class="input-group">
+    <input type="text" class="form-control" placeholder="Search" @onchange="SearchData" aria-label="Search" aria-describedby="search-input">
+    <span class="input-group-text" id="search-input"><img src="images/search.svg" class="img-fluid" alt="Search"></span>
+    </div>
+    </div>
+    </section>*@
+        <!-- Search Panel end-->
+        <!-- Common card banner start -->
+        <section class="common-banner-card lg-margin">
+            <div class="container">
+                <div class="row row-cols-1 row-cols-md-3 gx-12 gx-md-3 gx-lg-4">
+                    <div class="col">
+                        <img src='@(!string.IsNullOrWhiteSpace(@BannerImage1) ? @BannerImage1 : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Card">
+                    </div>
+                    <!-- col -->
+                    <div class="col">
+                        <img src='@(!string.IsNullOrWhiteSpace(@BannerImage2) ? @BannerImage2 : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Card">
+                    </div>
+                    <!-- col -->
+                    <div class="col">
+                        <img src='@(!string.IsNullOrWhiteSpace(@BannerImage3) ? @BannerImage3 : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Card">
+                    </div>
+                    <!-- col -->
+                </div>
+                <!-- row -->
+            </div>
+        </section>
+        <!-- Common card banner end -->
+        <!--******************* Banner Section End *********************-->
+        <!--******************* Middle Section Start ******************-->
+        <!-- Categories Start -->
+        <section class="categories-section position-relative lg-margin">
+            <div class="container">
+                <h1>Categories</h1>
+                <!-- slider start -->
+                <div class="swiper categorySwiper">
+                    <div class="swiper-wrapper">
+                        @if (pOSDepartmentGetList.Details != null)
+                        {
+                            @if (pOSDepartmentGetList.Details.Count != 0)
+                            {
+                                @foreach (var category in pOSDepartmentGetList.Details)
+                                {
+                                    <div class="swiper-slide">
+                                        <div class="card" @onclick="e => SubCategoryGetByID()">
+                                            <div class=" card-img">
+                                                <a class="card-img">
+                                                    <img src='@(!string.IsNullOrWhiteSpace(category.Image) ? category.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                                </a>
+                                            </div>
+                                            <h4>@category.DepartmentName</h4>
+                                        </div>
+                                    </div>
+                                }
+
+                            }}
+                    </div>
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                    @*<span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>*@
+                </div>
+                <!-- slider end -->
+            </div>
+        </section>
+
+        <!-- Featured Products start -->
+        <section href="shop-product-list" class="featured-product-details position-relative md-margin">
+            <div class="container">
+                @if (posInventoryResponse.Details != null)
+                {
+
+                    @if (posInventoryResponse.Details.Count != 0)
+                    {
+                        <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                            <h2 class="m-0">Featured Products</h2>
+                            @if (posInventoryResponse.Details.Count > 4)
+                            {
+                                <a href="shop-product-list" class="btn view-all-btn">View All</a>
+                            }
+                        </div>
+                        <div class="row featured-product-row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-3 gx-lg-4 justify-content-md-start">
+                            @*@foreach (var product in posInventoryResponse.Details.Take(4))  *@
+                            @foreach (var product in posInventoryResponse.Details.Take(3))
+
+                            {
+                                <div class="col">
+                                    @*<div class="card featured-product-card position-relative">
+                    <span class="discount-label position-absolute">@product.Attribute</span>
+                    <a @onclick="e => GetByID(product.ListId, true)" class="card-img">
+                    <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                    </a>
+                    <div class="p-2">
+                    <h4 class="fw-500">@product.Attribute</h4>
+                    <div class="card-text d-flex align-items-start justify-content-between">
+                    <h5 class="m-0">
+                    <a>
+                    <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+                    </a>
+                    </h5>
+                    <div class="d-flex align-items-center justify-content-end ms-auto">
+                    <del>@String.Format("{0:C}", @product.Cost)</del>
+                    <h4>@String.Format("{0:C}", @product.Cost)</h4>
+                    </div>
+                    </div>
+                    </div>
+                    </div>*@
+                                    <!--Card Start -->
+                                    <a @onclick="e => GetByID(product.ListId, true)" class="card featured-product-card position-relative cursor-pointer">
+                                        @*<div class="discount-label">*@
+                                        @*<span class="position-absolute">@product.Attribute</span>*@
+                                        @*<span class="position-absolute">30% off</span>*@
+                                        @*</div>*@
+                                        <div class="d-flex align-items-lg-start">
+                                            <div class="card-img">
+                                                <img src='@(!string.IsNullOrWhiteSpace(product.Image) ? product.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Featured Products">
+                                            </div>
+                                            @*<h4 class="fw-500">@product.Attribute</h4>  *@
+                                            <h4 class="fw-500 m-0">
+                                                @product.Attribute
+
+                                                <h5 class="fw-500 m-0">@product.Description</h5>
+                                            </h4>
+                                        </div>
+                                        <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                            <div class="card-text d-flex align-items-center justify-content-between">
+                                                <h5 class="m-0">
+                                                    <span class="mb-0 innter-subtitle">
+                                                        <img src="images/shop-icon.svg" class="img-fluid" alt="Shop">@product.Desc1
+                                                    </span>
+                                                </h5>
+                                                <div class="d-flex align-items-center justify-content-end ms-auto">
+                                                    <del>$@product.Cost</del>
+                                                    <h4>$@product.Cost</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <!--Card End-->
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row featured-product-row row-cols-1 row-cols-md-3 row-cols-lg-4 gx-3 gx-lg-4 justify-content-md-center">
+                            <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                                <div class="no-data-found text-center">
+                                    <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                    <h2>Oppps...</h2>
+                                    <h4>Product Not Found please try again</h4>
+                                </div>
+                            </section>
+                        </div>
+                    }
+                    <!-- row -->
+                }
+            </div>
+        </section>
+        <!-- Featured Products end -->
+        <section class="position-relative xl-margin ">
+            <div class="container">
+                <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+                    <h2 class="m-0">Stores</h2>
+                </div>
+                <div class="row store-row row-cols-1 row-cols-lg-2">
+                    @if (storeGetResponse.Details != null)
+                    {
+                        @if (storeGetResponse.Details.Count != 0)
+                        {
+                            @foreach (var store in storeGetResponse.Details.Take(4))
+                            {
+                                <div class="col">
+                                    <a @onclick="e => StoreGetByID(store.Id)" class="card store-card position-relative">
+                                        <div class="card-img">
+                                            <img src='@(!string.IsNullOrWhiteSpace(store.Image) ? store.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Store">
+                                        </div>
+                                        <div class="card-text">
+                                            <h3>@store.Name</h3>
+                                            <h5><img src="images/location-icon.svg" class="img-fluid" alt="Location">@store.Address</h5>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+
+                        }
+
+                    }
+                </div>
+                <!-- row -->
+            </div>
+        </section>
+        <!-- Stores end -->
+    </main>
+    <!--******************* Middle Section End ******************-->
+}
+<!-- Side Navigation Menu start -->
+<div class="modal fade left side-navigation-menu-modal" id="side-navigation-menu" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-body">
+                <ul class="menu-list">
+                    <li><button class="btn-common p-0" data-bs-dismiss="modal" @onclick="ClickAboutUs">About Us</button></li>
+                    <li><button @onclick="Blog" class="btn-common p-0" data-bs-dismiss="modal">Blogs</button></li>
+                    <li><button @onclick="FQA" class="btn-common p-0" data-bs-dismiss="modal">FAQ</button></li>
+                    <li><button class="btn-common p-0" data-bs-dismiss="modal" @onclick="ClickContactUs">Contact Us</button></li>
+                    <li><button @onclick="Event" class="btn-common p-0" data-bs-dismiss="modal">Event</button></li>
+                    <li><button @onclick="Contest" class="btn-common p-0" data-bs-dismiss="modal">Contest</button></li>
+                    <li><button @onclick="TandC" class="btn-common p-0" data-bs-dismiss="modal">Terms & Conditions</button></li>
+                    <li><button class="btn-common p-0" data-bs-dismiss="modal" @onclick="PrivacyPolicy">Privacy Policy</button></li>
+                    <li><button class="btn-common p-0" data-bs-dismiss="modal" @onclick="Login">LogIn</button></li>
+                    <li><button class="btn-common p-0" data-bs-dismiss="modal" @onclick="Signup">SignUp</button></li>
+                </ul>
+            </div>
+            <!-- bg Circle Wave Animation start -->
+            <div class="bg-circle-wave">
+                <span class="wave s1"></span>
+                <span class="wave s2"></span>
+                <span class="wave s3"></span>
+                <span class="wave s4"></span>
+            </div>
+            <!-- bg Circle Wave Animation end -->
+        </div>
+    </div>
+</div>
+<!-- Side Navigation Menu start -->
+@*@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <div class="main">
+                <div class="circle-1"></div>
+                <div class="circle-2">
+                    <div class="icon-block">
+                        <img src="images/gift.svg" class="img-fluid icon-animation gift" alt="Gift">
+                    </div>
+                    <div class="icon-block">
+                        <img src="images/award.svg" class="img-fluid icon-animation award" alt="Award">
+                    </div>
+                </div>
+                <div class="circle-3">
+                    <div class="icon-block">
+                        <img src="images/dollar.svg" class="img-fluid icon-animation dollar" alt="Dollar">
+                    </div>
+                    <div class="icon-block">
+                        <img src="images/discount.svg" class="img-fluid icon-animation discount" alt="Discount">
+                    </div>
+                </div>
+                <div class="circle-4"></div>
+                <div class="center-logo">
+                    <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Preloader End -->
+}*@
+@*<!-- Preloader Start -->
+    <div id="preloader">
+    <div class="main-container">
+    <div class="main">
+    <div class="circle-1"></div>
+    <div class="circle-2">
+    <div class="icon-block">
+    <img src="images/gift.svg" class="img-fluid icon-animation gift" alt="Gift">
+    </div>
+    <div class="icon-block">
+    <img src="images/award.svg" class="img-fluid icon-animation award" alt="Award">
+    </div>
+    </div>
+    <div class="circle-3">
+    <div class="icon-block">
+    <img src="images/dollar.svg" class="img-fluid icon-animation dollar" alt="Dollar">
+    </div>
+    <div class="icon-block">
+    <img src="images/discount.svg" class="img-fluid icon-animation discount" alt="Discount">
+    </div>
+    </div>
+    <div class="circle-4"></div>
+    <div class="center-logo">
+    <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+    </div>
+    </div>
+    </div>
+    </div>
+    <!-- Preloader End -->*@
+
+
+@code {
+    ShopProductListResponse shopProductListResponse = new ShopProductListResponse();
+    ProductCategoryResponse productCategoryListResponse = new ProductCategoryResponse();
+    StoreListResponse storelistResponse = new StoreListResponse();
+    StoreGetResponse storeGetResponse = new StoreGetResponse();
+    ListRequest listRequest = new ListRequest();
+    PosInventoryResponse posInventoryResponse = new PosInventoryResponse();
+    POSInventoryListRequest pOSInventoryListRequest = new POSInventoryListRequest();
+    POSDepartmentListRequest pOSDepartmentListRequest = new POSDepartmentListRequest();
+    POSDepartmentListResponse pOSDepartmentListResponse = new POSDepartmentListResponse();
+    BannerImageListResponse bannerImageListResponse = new();
+    POSDepartmentGetList pOSDepartmentGetList = new POSDepartmentGetList();
+
+    string BannerImage1, BannerImage2, BannerImage3;
+
+
+    int PageSize;
+    bool Loader = true;
+
+    protected async Task LoadBanner()
+    {
+        //Loader = true;
+        var result = await CommonHelpers.BannerList(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            bannerImageListResponse = JsonConvert.DeserializeObject<BannerImageListResponse>(result.data);
+            foreach (var img in bannerImageListResponse.details)
+            {
+                BannerImage1 = img.bannerImage1;
+                BannerImage2 = img.bannerImage2;
+                BannerImage3 = img.bannerImage3;
+            }
+
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                bannerImageListResponse = JsonConvert.DeserializeObject<BannerImageListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        if (token != null && token != string.Empty && token == TokenResponse.Token)
+        {
+            NavManager.NavigateTo("/index");
+        }
+        else
+        {
+            Loader = true;
+            await LoadBanner();
+            await LoadPosProductData();
+            await LoadPoductCategoryData();
+            await LoadData();
+            await LoadStore();
+            await JsRuntime.InvokeVoidAsync("categorySwiper");
+            Loader = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task Event()
+    {
+        NavManager.NavigateTo("/event");
+        StateHasChanged();
+    }
+
+    private async Task Contest()
+    {
+        NavManager.NavigateTo("/contest");
+        StateHasChanged();
+    }
+
+    private async Task LoadData(int pageNumber = 0)
+    {
+        //Loader = true;
+        listRequest.PageNo = pageNumber;
+
+        var result = await ShopProductHelpers.ShopProductList(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                shopProductListResponse = JsonConvert.DeserializeObject<ShopProductListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+
+    private void GetByID(string id, bool value)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (value)
+            NavManager.NavigateTo($"/shop-pos-product-list-detail/{cipheredId}");
+        else
+            NavManager.NavigateTo($"/store-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private async Task LoadPosProductData(int pageNumber = 0)
+    {
+        //Loader = true;
+
+        var result = await ShopProductHelpers.GetPosInventoryList();
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            posInventoryResponse = JsonConvert.DeserializeObject<PosInventoryResponse>(result.data);
+
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something was wrong!");
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+    private async Task LoadPoductCategoryData(int pageNumber = 0)
+    {
+        //Loader = true;
+        listRequest.PageNo = pageNumber;
+
+        //var result = await ShopProductHelpers.ProductCategoryList(listRequest);
+        var result = await POSDepartmentListHelper.DepartmentList(pOSDepartmentListRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                pOSDepartmentGetList = JsonConvert.DeserializeObject<POSDepartmentGetList>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+
+    private async Task SubCategoryGetByID()
+    {
+        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please Login");
+
+    }
+    private async Task LoadStore(int pageNumber = 0)
+    {
+        //Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+
+        var result = await StoreHelpers.StoreListWithoutTokenApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                storeGetResponse = JsonConvert.DeserializeObject<StoreGetResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+
+    private void ClickAboutUs()
+    {
+        NavManager.NavigateTo("/about-us-home");
+    }
+
+    private void ClickContactUs()
+    {
+        NavManager.NavigateTo("/contact-us-home");
+    }
+
+    private void Login()
+    {
+        NavManager.NavigateTo("/sign-in");
+    }
+
+    private void Signup()
+    {
+        NavManager.NavigateTo("/sign-up");
+    }
+
+    private void Blog()
+    {
+        NavManager.NavigateTo("/blog");
+    }
+
+    private void FQA()
+    {
+        NavManager.NavigateTo("/fqa");
+    }
+    private void TandC()
+    {
+        NavManager.NavigateTo("/tandc");
+    }
+
+    private void ProductGetByID(string id, bool value)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        if (value)
+            NavManager.NavigateTo($"/shop-product-list-detail/{cipheredId}");
+        else
+            NavManager.NavigateTo($"/store-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private void StoreGetByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/store-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private async void SearchData(ChangeEventArgs e)
+    {
+        //Loader = true;
+        if (!string.IsNullOrWhiteSpace(e.Value.ToString()))
+        {
+            listRequest.Name = e.Value.ToString().Trim();
+            await LoadData();
+        }
+        else
+        {
+            listRequest.Name = string.Empty;
+            await LoadData();
+        }
+        //Loader = false;
+        StateHasChanged();
+    }
+
+    private void CustomToggleBar()
+    {
+        JsRuntime.InvokeVoidAsync("CustomToggleBar");
+    }
+
+    private void PrivacyPolicy()
+    {
+        NavManager.NavigateTo("/privacyPolicy");
+    }
+}

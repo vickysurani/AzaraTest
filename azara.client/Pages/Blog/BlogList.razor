@@ -1,0 +1,247 @@
+﻿@page "/blog"
+
+@layout LoginLayout
+
+<PageTitle>@ClientTitleModel.BlogTitle</PageTitle>
+
+
+@if (Loader == true)
+{
+       <!-- Preloader Start -->
+  <div id="preloader">
+    <div class="main-container">
+      <!-- Circle animation img start -->
+      <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+      <!-- Circle animation img end -->
+  
+      <!-- Azara logo start -->
+      <div class="center-logo">
+        <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+      </div>
+      <!-- Azara logo end -->
+    </div>
+  </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                @if (TokenResponse.Token == null)
+                {
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                }
+                else
+                {
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                }
+                <h1>Blogs</h1>
+            </div>
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!-- Blog start -->
+    <section class="common-padding position-relative xs-padding">
+        <div class="container">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 blog-row gx-3 gx-md-4">
+                @if (blogListResponse.Details != null)
+                {
+                    @if (blogListResponse.Details.Count != 0)
+                    {
+                        @foreach (var blog in blogListResponse.Details)
+                        {
+                            <div class="col">
+                                <a @onclick="e => GetByID(blog.Id)" class="card blog-card">
+                                    <div class="card-image">
+                                        <img src='@(!string.IsNullOrWhiteSpace(blog.Image) ? blog.Image : "https://azaradocument.blob.core.windows.net/user/DefaultIMG.png")' class="img-fluid" alt="Blog">
+                                    </div>
+                                    <div class="card-text">
+                                        <h4>@blog.Title</h4>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <h5><img src="images/user-blog.svg" class="img-fluid" alt="User">@blog.AuthorName</h5>
+                                            <h5><img src="images/blog-calendar.svg" class="img-fluid" alt="Calendar">@blog.PublishedDate.ToString("dddd, dd MMMM yyyy")</h5>
+                                        </div>
+
+                                        @*<div class="card-text">
+                        <h5><img src="images/user-blog.svg" class="img-fluid" alt="User">@blog.AuthorName</h5>
+                        <h5><img src="images/calendar.svg" class="img-fluid" alt="Calendar">@blog.PublishedDate</h5>
+
+                        @if (@blog.Descriptions.Length > 50)
+                        {
+                        <h6>@blog.Descriptions.Substring(0,50)</h6>
+                        }
+                        else
+                        {
+                        <h6>@blog.Descriptions</h6>
+                        }
+
+                        </div>*@
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div>
+                            <section class=" py-5 position-relative d-flex align-items-center justify-content-center">
+                                <div class="no-data-found text-center">
+                                    <img src="images/no-data-found.svg" class="img-fluid" alt="No Data Found">
+                                    <h2>Oppps...</h2>
+                                    <h4>Product Not Found please try again</h4>
+                                </div>
+                            </section>
+                        </div>
+                    }
+                }
+            </div>
+            <!-- row -->
+        </div>
+    </section>
+    <!-- Blog end -->
+}
+
+@code
+{
+    BlogListResponse blogListResponse = new BlogListResponse();
+    ListRequest listRequest = new ListRequest();
+    int PageSize = 1000, lenth;
+    bool Loader = true;
+    string token;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        string[] url = NavManager.Uri.Split('/');
+        token = await localStorage.GetItemAsync<string>("token");
+        TokenResponse.Token = token;
+        Loader = true;
+        await LoadData();
+        if (url.Last() == "blog")
+        {
+            await StartHubConnection();
+        }
+        //await StartHubConnection();
+        await GetBlog();
+        await DeleteBlog();
+        await UpdateBlog();
+        StateHasChanged();
+        Loader = false;
+
+        StateHasChanged();
+    }
+
+    internal async Task LoadData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+        var result = await BlogHelpers.BlogListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                blogListResponse = JsonConvert.DeserializeObject<BlogListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal void GetByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/blog-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    private HubConnection hubConnection;
+
+
+    private async Task StartHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri($"{ApiEndPointConsts.BaseRouteWithoutVersion}azara_api_notifications", UriKind.Absolute))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        if (hubConnection.ConnectionId != null)
+            await JsRuntime.InvokeAsync<string>("console.log", "SignalR Connected");
+        StateHasChanged();
+    }
+
+    internal async Task GetBlog()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("blog_insert", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task UpdateBlog()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("blog_update", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+
+    internal async Task DeleteBlog()
+    {
+        try
+        {
+            hubConnection.On<dynamic>("blog_delete", async (data) =>
+            {
+                string encodedMsg = $"{data}";
+                if (!string.IsNullOrWhiteSpace(encodedMsg))
+                {
+                    await LoadData();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeAsync<string>("console.log", $"SignalR disconnected by error. Error is : {ex.Message}");
+        }
+    }
+}

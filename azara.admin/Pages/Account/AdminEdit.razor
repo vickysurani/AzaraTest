@@ -1,0 +1,228 @@
+﻿@page "/admin-edit"
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Account.Request
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Models.Const
+
+<PageTitle>@AdminTitleModel.AdminProfileTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="d-flex justify-space-between align-item-center">
+        <div class="page-title">
+            <h2 class="d-lg-block d-none">@Title</h2>
+            <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="adminEditRequestResponse" OnValidSubmit="UpdateAdminProfile">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="admin-details" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+            </div>
+            <InputText type="hidden" @bind-Value="adminEditRequestResponse.UniqueId" />
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>User Name</label>
+                        <InputText class="form-control without-ic" placeholder="Admin Name" @bind-Value=adminEditRequestResponse.UserName aria-describedby="adminname" aria-label="Admin Name" />
+                        <ValidationMessage For="@(() => adminEditRequestResponse.UserName)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email Id</label>
+                        <InputText class="form-control without-ic" placeholder="Email Id" @bind-Value=adminEditRequestResponse.EmailId aria-describedby="emailidlable" aria-label="Email Id" />
+                        <ValidationMessage For="@(() => adminEditRequestResponse.EmailId)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div id="file-upload-form" class="uploader">
+                        <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" @bind-Value="adminEditRequestResponse.ProfilePhoto" @bind-Value:event="OnInput" OnChange="HandleImageUpload" />
+                        <ValidationMessage For="@(() => adminEditRequestResponse.ProfilePhoto)" />
+                        <label for="file-upload" id="file-drag">
+                            <img id="file-image" src="@adminEditRequestResponse.ProfilePhoto" alt="" class="@((string.IsNullOrEmpty(adminEditRequestResponse.ProfilePhoto)? "hidden" : ""))" @bind-Value="adminEditRequestResponse.ProfilePhoto" @bind-Value:event="OnInput">
+                            <div id="start">
+                                @if (!string.IsNullOrWhiteSpace(adminEditRequestResponse.ProfilePhoto))
+                                {
+                                    <button type="button" class="file-close-btn" @onclick="(() => DeleteImage(adminEditRequestResponse.ProfilePhoto))">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </button>
+                                }
+                                <img src="images/choose-file.png" class="file-img" alt="file-img">
+                                <div>Drag & Drop Here or </div>
+                                <div id="notimage" class="hidden">Please select an image</div>
+                                <a id="file-upload-btn" class="">CHoose a file</a>
+                                <p class="second-theme-color">max. 2GB</p>
+                            </div>
+                            <div id="response" class="hidden d-none">
+                                <div id="messages"></div>
+                                <progress class="progress" id="file-progress" value="0">
+                                    <span>0</span>%
+                                </progress>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    private bool Loader { get; set; } = true;
+    public string Title { get; set; } = "Edit Admin Profule";
+
+    AdminEditRequestResponse adminEditRequestResponse = new AdminEditRequestResponse();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        var result = await AccountHelper.GetProfilApi();
+        if (result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            adminEditRequestResponse = JsonConvert.DeserializeObject<AdminEditRequestResponse>(result.data);
+            Title = "Update : " + adminEditRequestResponse.UserName;
+        }
+        else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Admin not found");
+            return;
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            return;
+        }
+        Loader = false;
+    }
+
+    internal async Task UpdateAdminProfile()
+    {
+        Loader = true;
+        //baseImageUpload.FileName = insertUpdateRequest.Name.Replace(" ", "_").ToLower();
+        //var imageResponse = await ProductHelpers.UploadProductImage(baseImageUpload);
+        var result = await AccountHelper.AdminUpdate(adminEditRequestResponse);
+
+        if (result != null && result.meta.statusCode == StatusCodeConsts.Success)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Successfully Profile Updated!");
+            NavManager.NavigateTo("/admin-details");
+        }
+        else if (result != null && result.meta.statusCode == StatusCodeConsts.BadRequest)
+        {
+            Loader = false;
+            if (result.meta.message[0].Contains("error_account_not_found"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Bad request, try again!");
+                NavManager.NavigateTo("/admin-details");
+            }
+            else if (result.meta.message[0].Contains("error_otp_expired"))
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Token is expired");
+                NavManager.NavigateTo("/admin-details");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message}");
+            return;
+        }
+        Loader = false;
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = adminEditRequestResponse.ImageList != null && adminEditRequestResponse.ImageList.Any() ? adminEditRequestResponse.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Profile, OldFileName = adminEditRequestResponse.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    adminEditRequestResponse.ProfilePhoto = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage(string image)
+    {
+        adminEditRequestResponse.ProfilePhoto = new CommonHelpers(FileUpload).DeleteImage(image);
+    }
+}

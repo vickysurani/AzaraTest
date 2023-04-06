@@ -1,0 +1,172 @@
+﻿@page "/coupons-details/{Id}"
+@layout LoginLayout
+
+@using azara.client.Models.Coupons.Response
+
+
+@if (Loader == true)
+{
+    <!-- Preloader Start -->
+    <div id="preloader">
+        <div class="main-container">
+            <!-- Circle animation img start -->
+            <img src="./images/Azara_Pattern_Animation.svg" class="loader-circle img-fluid">
+            <!-- Circle animation img end -->
+            <!-- Azara logo start -->
+            <div class="center-logo">
+                <img src="images/azara-logo.svg" class="img-fluid logo" alt="Azara Logo">
+            </div>
+            <!-- Azara logo end -->
+        </div>
+    </div>
+    <!-- Preloader End -->
+}
+else
+{
+    <main>
+        <!-- Top Back Panel start -->
+        <div class="position-fixed top-0 start-0 end-0 container">
+            <div class="back-panel d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-start">
+                    <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                    <h1>Coupon Details</h1>
+                </div>
+                <a href="notification.html" class="account-label">
+                    <img src="images/notification-icon.svg" class="img-fluid notification" alt="Notification">
+                </a>
+            </div>
+        </div>
+        <!-- Top Back Panel end -->
+        <!-- Coupon Details start -->
+        <section class="common-padding position-relative coupon-reward-details min-vh-100 md-padding">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                        <!-- Coupon Reward Image Start -->
+                        <div class="coupon-reward-img sm-margin">
+                            <img src="@couponsData.CouponImage" class="img-fluid" alt="Coupon Reward">
+                        </div>
+                        <!-- Coupon Reward Image end -->
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <!-- Coupons Name-->
+                        <div class="coupon-expiry-date">
+                            <h5>Coupons Name : </h5>
+                            <h4>@couponsData.CouponTitle</h4>
+                        </div>
+                        <!-- Coupons Name -->
+                        <!-- Expiry date start -->
+                        <div class="coupon-expiry-date">
+                            <h5>Expiry date:</h5>
+                            <h4>@couponsData.ExpiryDate.ToString("dddd, dd MMMM yyyy")</h4>
+                        </div>
+                        <!-- Expiry date end -->
+                        <!-- Description start -->
+                        <div class="coupon-description">
+                            <h2>Description</h2>
+                            <p>@blogDescription</p>
+                        </div>
+                        <!-- Description end -->
+                    </div>
+                    <!-- col -->
+                </div>
+                <!-- row -->
+            </div>
+            <div class="coupon-reward-btn-section">
+                <a @onclick="e => AddCoupon(couponsData.Id)" class="btn btn-common">
+                    Add Coupon
+                </a>
+            </div>
+        </section>
+        <!-- Coupon Details end -->
+    </main>
+}
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    bool Loader = false;
+    string? MyRewardId, userId, BarCode = " ", BarcodeDis;
+
+
+    MyRewardInsertRequest insertMyReward = new MyRewardInsertRequest();
+    CouponsData couponsData = new CouponsData();
+    MarkupString blogDescription => (MarkupString)couponsData.Description;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loader = true;
+        var token = await localStorage.GetItemAsync<string>("token");
+        userId = await localStorage.GetItemAsync<string>("userId");
+        Id = GenericHelper.Decipher(Id, 3);
+        await CouponsGetById();
+        Loader = false;
+    }
+
+    internal async Task CouponsGetById()
+    {
+        Loader = true;
+        var result = await CouponsHelpers.CouponsbyID(new BaseIdRequest { Id = new(Id) });
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                couponsData = JsonConvert.DeserializeObject<CouponsData>(result.data);
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{Loc["error_something_went_wrong"]}");
+            else
+                await JsRuntime.InvokeVoidAsync("ShowErrorConfirmationModel");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal async Task AddCoupon(string id)
+    {
+        Loader = true;
+        insertMyReward.UserId = userId;
+        insertMyReward.CouponsId = Id;
+        var result = await CommonHelpers.MyRewardAddApi(insertMyReward);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(insertMyReward.UserId))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupon Updated Successfully!");
+                    NavManager.NavigateTo("/");
+
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupon Insert Successfully!");
+                    NavManager.NavigateTo("/");
+
+                }
+            }
+            else if (result.meta.statusCode == 500)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+
+            return;
+        }
+        Loader = false;
+        StateHasChanged();
+
+    }
+}
+
+

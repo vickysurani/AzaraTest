@@ -1,0 +1,285 @@
+﻿@page "/coupon/insert"
+@page "/coupon/update/{Id}"
+
+@using azara.admin.Helpers.Generic
+@using azara.admin.Models.Base.Request
+@using azara.admin.Models.Base.Response
+@using azara.admin.Helpers
+@using azara.admin.Models.Const
+@using azara.admin.Models.Coupons.Request
+
+<PageTitle>@AdminTitleModel.CoupenTitle</PageTitle>
+
+@if (Loader)
+{
+    <Loader></Loader>
+}
+else
+{
+    <div class="custom-section-wrap">
+        <div class="d-flex justify-space-between align-item-center">
+            <div class="page-title justify-content-center align-item-center">
+                <h2 class="d-lg-block d-none">@(!string.IsNullOrWhiteSpace(Id) ? "Update Coupon : " : "Add Coupon")</h2>
+                @if (!string.IsNullOrWhiteSpace(Id))
+                {
+                    <h4 class="ms-1">@Title</h4>
+                }
+                <span onclick="openNav()" class="d-lg-none d-block"><i class="fa fa-bars"></i></span>
+            </div>
+            <AdminProfile></AdminProfile>
+        </div>
+    </div>
+    <div class="data-table-area">
+        <EditForm class="form-details m-t-15" Model="couponsInsertUpdateRequest" OnValidSubmit="AddUpdateData">
+            <div class="filter-area justify-end align-item-center">
+                <div class="add-btn">
+                    <a href="/coupon" class="cancel-btn">Cancel</a>
+                    <input type="submit" value="Submit" />
+                </div>
+
+                
+            </div>
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Coupon Title</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Coupon Title" @bind-Value=couponsInsertUpdateRequest.CouponTitle aria-describedby="coupontitlelabel" aria-label="Coupon Title" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.CouponTitle)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <InputDate class="form-control without-ic" placeholder="Enter Expiry Date" min='@MinDate.ToString("dd/MM/yyyy")' @bind-Value=couponsInsertUpdateRequest.ExpiryDate aria-describedby="expirydatelabel" aria-label="Expiry Date" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.ExpiryDate)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Descriptions</label>
+                        <InputTextArea type="text" class="form-control without-ic" placeholder="Enter Descriptions" @bind-Value=couponsInsertUpdateRequest.Description aria-describedby="descriptionslabel" aria-label="Descriptions" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.Description)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Amount" @bind-Value=couponsInsertUpdateRequest.Amount aria-describedby="amountlabel" aria-label="Amount" onkeypress="return ((event.charCode >= 48 && event.charCode <= 57) || event.charCode == 13 || event.charCode == 190)" maxlength="100000000" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.Amount)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Coupon Code</label>
+                        <InputText class="form-control without-ic" placeholder="Enter Coupon Code" @bind-Value=couponsInsertUpdateRequest.CouponCode aria-describedby="couponcodelabel" aria-label="Coupon Code" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.CouponCode)" />
+                    </div>
+
+                    @*<div class="form-group">
+                        <label>Enter required ponts for Coupon</label>
+                        <InputNumber class="form-control without-ic" placeholder="Enter required ponts for Coupon" @bind-Value=couponsInsertUpdateRequest.CouponsPoint aria-describedby="couponcodelabel" aria-label="Enter required ponts for Coupon" />
+                        <ValidationMessage For="@(() => couponsInsertUpdateRequest.CouponsPoint)" />
+                    </div>*@
+
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Image</label>
+                        <div id="file-upload-form" class="uploader">
+                            <InputFile id="file-upload" type="file" name="fileUpload" accept="image/*" @bind-Value="couponsInsertUpdateRequest.CouponImage" @bind-Value:event="OnInput" OnChange="HandleImageUpload" />
+                            <ValidationMessage For="@(() => couponsInsertUpdateRequest.CouponImage)" />
+                            <label for="file-upload" id="file-drag">
+                                @if (!string.IsNullOrWhiteSpace(couponsInsertUpdateRequest.CouponImage))
+                                {
+                                    <button type="button" class="file-close-btn" @onclick="DeleteImage">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </button>
+                                }
+                                <img id="file-image" src="@couponsInsertUpdateRequest.CouponImage" alt="" class="@((string.IsNullOrEmpty(couponsInsertUpdateRequest.CouponImage)? "hidden" : ""))" @bind-Value="couponsInsertUpdateRequest.CouponImage" @bind-Value:event="OnInput">
+                                <div id="start">
+                                    @*<img src="images/choose-file.png" class="file-img" alt="file-img">*@
+                                    <i class="fa fa-upload" aria-hidden="true"></i>
+                                    <div>Drag & Drop Here or </div>
+                                    <div id="notimage" class="hidden">Please select an image</div>
+                                    <a id="file-upload-btn" class="">CHoose a file</a>
+                                    <p class="second-theme-color">max. 2GB</p>
+                                </div>
+                                <div id="response" class="hidden d-none">
+                                    <div id="messages"></div>
+                                    <progress class="progress" id="file-progress" value="0">
+                                        <span>0</span>%
+                                    </progress>
+                                </div>
+                            </label>
+                        </div>
+                        @*<div class="form-group">
+                    <label>Status</label>
+                    <label class="switch">
+                    <InputCheckbox class="form-control without-ic" placeholder="Enter Status"
+                    rows="12" @bind-Value=couponsInsertUpdateRequest.Active aria-describedby="productsubcategorystatuslabel" checked="@couponsInsertUpdateRequest.Active" aria-label="Status" />
+                    <span class="slider round"></span>
+                    </label>
+                    </div>*@
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private bool Loader { get; set; }
+    public string Title { get; set; }
+    CouponsInsertUpdateRequest couponsInsertUpdateRequest = new CouponsInsertUpdateRequest();
+    BaseImageUploadRequest baseImageUpload { get; set; } = new();
+    private DateTime MinDate { get; set; } = DateTime.UtcNow;
+
+    public bool IsUpdate = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await localStorage.GetItemAsync<string>("token");
+            if (token != null && token != string.Empty && token == TokenResponse.Token)
+            {
+                await LoadData();
+                Loader = false;
+            }
+            else
+            {
+                await localStorage.ClearAsync();
+                NavManager.NavigateTo("/");
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Loader = true;
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            Id = GenericHelper.Decipher(Id, 3);
+            couponsInsertUpdateRequest.Id = Id;
+            Loader = false;
+            var result = await CouponsHelpers.CouponsGetById(new BaseIdRequest { Id = new(Id) });
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                couponsInsertUpdateRequest = JsonConvert.DeserializeObject<CouponsInsertUpdateRequest>(result.data);
+                if (couponsInsertUpdateRequest != null)
+                {
+                    MinDate = couponsInsertUpdateRequest.ExpiryDate;
+                    Title = couponsInsertUpdateRequest.CouponTitle;
+                }
+                //Title = couponsInsertUpdateRequest.CouponTitle;
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Coupons not found");
+                return;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Something went wrong");
+                return;
+            }
+        }
+        else
+        {
+            Loader = false;
+            Title = "Add New Coupons";
+            couponsInsertUpdateRequest = new CouponsInsertUpdateRequest();
+        }
+    }
+
+    internal async Task AddUpdateData()
+    {
+        Loader = true;
+        couponsInsertUpdateRequest.Id = Id;
+        var result = await CouponsHelpers.CouponAddUpdateApi(couponsInsertUpdateRequest);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.ClearAsync();
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(couponsInsertUpdateRequest.Id))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupons Updated Successfully!");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupons Insert Successfully!");
+                }
+                NavManager.NavigateTo("/coupon");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            return;
+        }
+    }
+
+    int imageCount = 12;
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var images = couponsInsertUpdateRequest.ImageList != null && couponsInsertUpdateRequest.ImageList.Any() ? couponsInsertUpdateRequest.ImageList : new List<string>();
+
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new FileInfo(file.Name);
+                    if (fileInfo.Extension == ".jpg" ||
+                        fileInfo.Extension == ".png" ||
+                        fileInfo.Extension == ".jpeg")
+                    {
+                        var files = e.GetMultipleFiles(imageCount).ToList();
+                        List<string> imageList = new List<string>();
+                        if (files != null && files.Count > 0)
+                        {
+                            foreach (var item in files)
+                            {
+                                var fileRequest = new FileNewInsertUploadRequest { File = new List<IBrowserFile> { item }, FileName = new List<string> { item.Name }, FolderName = BlobContainerConsts.Coupons , OldFileName = couponsInsertUpdateRequest.ImageList };
+
+                                var result = await CommonHelpers.UploadNewFileApi(fileRequest);
+
+                                if (result != null)
+                                {
+                                    FileListResponse response = JsonConvert.DeserializeObject<FileListResponse>(result.data);
+
+                                    if (response != null && response.Details != null && response.Details.Count > 0)
+                                    {
+                                        imageList.Add(response.Details.FirstOrDefault().FilePath);
+                                    }
+                                    couponsInsertUpdateRequest.CouponImage = response.Details[0].FilePath;
+
+                                }
+                            }
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Please select the .jpg, .png & .jpeg images");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("ShowToastr", "error", ex.Message);
+            return;
+        }
+    }
+
+    private async Task DeleteImage()
+    {
+        couponsInsertUpdateRequest.CouponImage = new CommonHelpers(FileUpload).DeleteImage(couponsInsertUpdateRequest.CouponImage);
+    }
+}

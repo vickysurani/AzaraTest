@@ -1,0 +1,461 @@
+﻿@page "/Shop-product-deal-coupon"
+@using azara.client.Models.Coupons;
+@using azara.client.Models.Coupons.Response;
+
+<PageTitle>@ClientTitleModel.ShopProductTitle</PageTitle>
+
+<main>
+    <!-- Top Back Panel start -->
+    <div class="position-fixed top-0 start-0 end-0 container">
+        <div class="back-panel d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-start">
+                <a onclick="backButton()" class="back"><img src="images/back-arrow.svg" class="img-fluid" alt="Back"></a>
+                <h1>Deals & Coupons</h1>
+            </div>
+            <!-- <a href="javascript:void(0)" class="top-panel-img" data-bs-toggle="modal" data-bs-target="#shopFilterModal">
+              <img src="images/filter-icon.svg" class="img-fluid" alt="Filter">
+            </a> -->
+        </div>
+    </div>
+    <!-- Top Back Panel end -->
+    <!--******************* Middle Section Start ******************-->
+    <!-- Tabs start -->
+    <section class="common-padding position-relative xs-padding">
+        <div class="container">
+            <ul class="nav nav-pills rewards-custom-pills" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-deals-tab" data-bs-toggle="pill" data-bs-target="#pills-deals" type="button" role="tab" aria-controls="pills-deals" aria-selected="true">Deals</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-coupons-tab" data-bs-toggle="pill" data-bs-target="#pills-coupons" type="button" role="tab" aria-controls="pills-coupons" aria-selected="false">coupons</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-punch-cards-tab" data-bs-toggle="pill" data-bs-target="#pills-punch-cards" type="button" role="tab" aria-controls="pills-punch-cards" aria-selected="false">punch-cards</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="pills-tabContent">
+                <div class="tab-pane fade show active" id="pills-deals" role="tabpanel" aria-labelledby="pills-deals-tab">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 rewards-row gx-md-3 gx-4">
+                        @if (rewardListResponse.Details != null)
+                        {
+                            @if (rewardListResponse.Details.Count != 0)
+                            {
+                                @foreach (var reward in rewardListResponse.Details.Take(3))
+                                {
+                                    @if (reward.IsUsed == true)
+                                    {
+                                        <div class="col">
+                                            @*<div class="card rewards-card expired">
+                                                <a class="card-img">
+                                                    <img src="@reward.Image" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    <h6>Valid till 30th Aug, 2022</h6>
+                                                    <a @onclick="e => AddReward(reward.Id)" class="btn btn-common">Add Reward<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>*@
+                                            <div class="card featured-product-card position-relative cursor-pointer">
+                                                <a @onclick="e => RewardGetByID(reward.Id)" class="d-flex align-items-lg-start">
+                                                    <div class="card-img">
+                                                        <img src="@reward.Image" class="img-fluid" alt="Reward">
+                                                    </div>
+                                                    <h4 class="fw-500 m-0">
+                                                    </h4>
+                                                </a>
+                                                <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                                    <div class="card-text d-flex align-items-center justify-content-between">
+                                                        <h5 class="mb-0">
+                                                            <a @onclick="e => RewardGetByID(reward.Id)">Valid till 30th Aug, 2022</a>
+                                                        </h5>
+                                                        <a @onclick="e => AddReward(reward.Id)" class="btn btn-common">Add Reward<span></span></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col">
+                                            @*<div class="card rewards-card">
+                                                <a @onclick="e => RewardGetByID(reward.Id)" class="card-img">
+                                                    <img src="@reward.Image" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    <h6>Valid till 30th Aug, 2022</h6>
+                                                    <a @onclick="e => AddReward(reward.Id)" class="btn btn-common">Add Reward<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>*@
+                                            <div class="card featured-product-card position-relative cursor-pointer">
+                                                <a @onclick="e => RewardGetByID(reward.Id)" class="d-flex align-items-lg-start">
+                                                    <div class="card-img">
+                                                        <img src="@reward.Image" class="img-fluid" alt="Reward">
+                                                    </div>
+                                                    <h4 class="fw-500 m-0">
+                                                    </h4>
+                                                </a>
+                                                <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                                    <div class="card-text d-flex align-items-center justify-content-between">
+                                                        <h5 class="mb-0">
+                                                            <a @onclick="e => RewardGetByID(reward.Id)">Valid till 30th Aug, 2022</a>
+                                                        </h5>
+                                                        <a @onclick="e => AddReward(reward.Id)" class="btn btn-common">Add Reward<span></span></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            }
+                        }
+                    </div>
+                    <!-- row -->
+                </div>
+                <div class="tab-pane fade" id="pills-coupons" role="tabpanel" aria-labelledby="pills-coupons-tab">
+                    <div class="row row-cols-1 row-cols-sm-3 blog-row gx-3 gx-md-4">
+                        @if (couponsListResponse.Details != null)
+                        {
+                            @if (couponsListResponse.Details.Count != 0)
+                            {
+                                @foreach (var coupons in couponsListResponse.Details)
+                                {
+                                    @if (coupons.IsUsed == true)
+                                    {
+                                        <div class="col">
+                                            @*<div class="card rewards-card expired">
+                                                <a class="card-img">
+                                                <img src="@coupons.CouponImage" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                <h6>Valid till @coupons.ExpiryDate.ToString("dd MMM, yyyy")</h6>
+                                                <a @onclick="e => AddCoupon(coupons.Id)" class="btn btn-common">Add Reward<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>*@
+                                            <div class="card featured-product-card position-relative cursor-pointer">
+                                                <a href"#" class="d-flex align-items-lg-start">
+                                                    <div class="card-img">
+                                                        <img src="@coupons.CouponImage" class="img-fluid" alt="Reward">
+                                                    </div>
+                                                    <h4 class="fw-500 m-0">
+                                                    </h4>
+                                                </a>
+                                                <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                                    <div class="card-text d-flex align-items-center justify-content-between">
+                                                        <h5 class="mb-0">
+                                                            <a href="#">Valid till @coupons.ExpiryDate.ToString("dd MMM, yyyy")</a>
+                                                        </h5>
+                                                        <a @onclick="e => AddCoupon(coupons.Id)" class="btn btn-common">Add Reward<span></span></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col">
+                                            @*<div class="card rewards-card">
+                                                <a @onclick="e => GetByID(coupons.Id)" class="card-img">
+                                                    <img src="@coupons.CouponImage" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    <h6>Valid till @coupons.ExpiryDate.ToString("dd MMM, yyyy")</h6>
+                                                    <a @onclick="e => AddCoupon(coupons.Id)" class="btn btn-common">Add Reward<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>*@
+                                            <div class="card featured-product-card position-relative cursor-pointer">
+                                                <a href"#" class="d-flex align-items-lg-start">
+                                                    <div class="card-img">
+                                                        <img src="@coupons.CouponImage" class="img-fluid" alt="Reward">
+                                                    </div>
+                                                    <h4 class="fw-500 m-0">
+                                                    </h4>
+                                                </a>
+                                                <div class="p-2 px-0 pt-3 pb-0 mt-3">
+                                                    <div class="card-text d-flex align-items-center justify-content-between">
+                                                        <h5 class="mb-0">
+                                                            <a href="#">Valid till @coupons.ExpiryDate.ToString("dd MMM, yyyy")</a>
+                                                        </h5>
+                                                        <a @onclick="e => AddCoupon(coupons.Id)" class="btn btn-common">Add Reward<span></span></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            }
+                        }
+                    </div>
+                    <!-- row -->
+                </div>
+                <div class="tab-pane fade" id="pills-punch-cards" role="tabpanel" aria-labelledby="pills-punch-cards-tab">
+                    <div class="row row-cols-1 row-cols-sm-3 blog-row gx-3 gx-md-4">
+                        @if (punchcardlistresponse.Details != null)
+                        {
+                            @if (punchcardlistresponse.Details.Count != 0)
+                            {
+                                @foreach (var punchcard in punchcardlistresponse.Details)
+                                {
+                                    <div class="col">
+                                        @if (punchcard.IsUsed == true)
+                                        {
+                                            <div class="card rewards-card expired">
+                                                <a class="card-img">
+                                                    <img src="@punchcard.Image" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    <h6>Valid till @punchcard.ExpiryDate.ToString("dd MMM, yyyy")</h6>
+                                                    <a @onclick="e => AddCoupon(punchcard.Id)" class="btn btn-common">Add Punchcard<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="card rewards-card">
+                                                <a @onclick="e => GetByID(punchcard.Id)" class="card-img">
+                                                    <img src="@punchcard.Image" class="img-fluid" alt="Reward">
+                                                </a>
+                                                <div class="card-text d-flex align-items-center justify-content-between">
+                                                    <h6>Valid till @punchcard.ExpiryDate.ToString("dd MMM, yyyy")</h6>
+                                                    <a @onclick="e => AddCoupon(punchcard.Id)" class="btn btn-common">Add Punchcard<span style="top: 36.3438px; left: 33.5781px;"></span></a>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+                    <!-- row -->
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- Tabs end -->
+</main>
+
+
+
+@code {
+
+    int lenth, PageSize = 10;
+    bool Loader = true;
+
+    ListRequest listRequest = new ListRequest();
+    CouponsListResponse couponsListResponse = new CouponsListResponse();
+    RewardListResponse rewardListResponse = new RewardListResponse();
+    PunchcardListResponse punchcardlistresponse = new PunchcardListResponse();
+    MyRewardInsertRequest insertMyReward = new MyRewardInsertRequest();
+    MyRewardResponse myReward = new MyRewardResponse();
+
+    string userId;
+    bool IsUsed = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await localStorage.GetItemAsync<string>("token");
+        userId = await localStorage.GetItemAsync<string>("userId");
+
+        await LoadCouponData();
+        await LoadRewardData();
+        await LoadPunchcard();
+    }
+
+
+
+    internal async Task LoadRewardData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = 3;
+        var result = await RewardHelper.RewardListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                rewardListResponse = JsonConvert.DeserializeObject<RewardListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal async Task AddReward(string id)
+    {
+        Loader = true;
+        insertMyReward.UserId = userId;
+        insertMyReward.RewardId = id;
+        var result = await CommonHelpers.MyRewardAddApi(insertMyReward);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(insertMyReward.UserId))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Reward Updated Successfully!");
+                    NavManager.NavigateTo("/Shop-product-deal-coupon");
+                    StateHasChanged();
+
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Reward Insert Successfully!");
+                    NavManager.NavigateTo("/Shop-product-deal-coupon");
+                    StateHasChanged();
+
+                }
+                IsUsed = true;
+            }
+            else if (result.meta.statusCode == 500)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+
+            return;
+        }
+        StateHasChanged();
+
+    }
+
+    internal void RewardGetByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/reward-detail/{cipheredId}");
+        StateHasChanged();
+    }
+
+    internal async Task LoadPunchcard(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+        var result = await CouponsHelpers.PunchcardListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                punchcardlistresponse = JsonConvert.DeserializeObject<PunchcardListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+        StateHasChanged();
+    }
+
+    internal async Task LoadCouponData(int pageNumber = 0)
+    {
+        Loader = true;
+        listRequest.PageNo = pageNumber;
+        listRequest.PageSize = PageSize;
+
+        var result = await CouponsHelpers.CouponsListApi(listRequest);
+        if (result.meta.statusCode == StatusCodeConsts.UnAuthorized)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            if (result.meta.statusCode == StatusCodeConsts.Success)
+            {
+                couponsListResponse = JsonConvert.DeserializeObject<CouponsListResponse>(result.data);
+
+            }
+            else if (result.meta.statusCode == StatusCodeConsts.BadRequest)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+            else
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+        }
+        Loader = false;
+
+        StateHasChanged();
+    }
+
+    internal void GetByID(string id)
+    {
+        int key = 3;
+        var cipheredId = GenericHelper.Encipher(id, key);
+        NavManager.NavigateTo($"/coupons-details/{cipheredId}");
+        StateHasChanged();
+    }
+
+    internal async Task AddCoupon(string id)
+    {
+        Loader = true;
+        insertMyReward.UserId = userId;
+        insertMyReward.CouponsId = id;
+        var result = await CommonHelpers.MyRewardAddApi(insertMyReward);
+
+        if (result.meta.statusCode == 401)
+        {
+            await localStorage.SetItemAsync("token", string.Empty);
+            NavManager.NavigateTo("/");
+        }
+        else
+        {
+            Loader = false;
+            if (result.meta.statusCode == 200)
+            {
+                if (!string.IsNullOrEmpty(insertMyReward.UserId))
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupon Updated Successfully!");
+                    NavManager.NavigateTo("/Shop-product-deal-coupon");
+                    StateHasChanged();
+
+
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Coupon Insert Successfully!");
+                    NavManager.NavigateTo("/Shop-product-deal-coupon");
+                    StateHasChanged();
+
+                }
+
+                IsUsed = true;
+
+            }
+            else if (result.meta.statusCode == 500)
+            {
+                await JsRuntime.InvokeVoidAsync("ShowToastr", "error", $"{result.meta.message[0]}");
+            }
+
+            return;
+        }
+        StateHasChanged();
+
+    }
+}
